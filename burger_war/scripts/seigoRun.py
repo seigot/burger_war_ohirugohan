@@ -9,7 +9,7 @@ from sensor_msgs.msg import LaserScan
 from sensor_msgs.msg import Image
 from cv_bridge import CvBridge, CvBridgeError
 import cv2
-
+import numpy as np
 
 class SeigoBot():
     def __init__(self, bot_name):
@@ -32,8 +32,23 @@ class SeigoBot():
     # update lidar scan state
     def lidarCallback(self, data):
         self.scan = data
-        print(self.scan)
-                    
+        # print(self.scan)
+
+    def find_rect_of_target_color(self, image):
+        hsv = cv2.cvtColor(image, cv2.COLOR_BGR2HSV_FULL)
+        h = hsv[:, :, 0]
+        s = hsv[:, :, 1]
+        mask = np.zeros(h.shape, dtype=np.uint8)
+        mask[((h < 20) | (h > 200)) & (s > 128)] = 255
+        img, contours, _ = cv2.findContours(mask, cv2.RETR_TREE, cv2.CHAIN_APPROX_SIMPLE)
+        #contours = cv2.findContours(mask, cv2.RETR_TREE, cv2.CHAIN_APPROX_SIMPLE)
+        rects = []
+        for contour in contours:
+            approx = cv2.convexHull(contour)
+            rect = cv2.boundingRect(approx)
+            rects.append(np.array(rect))
+        return rects
+        
     # camera image call back sample
     # comvert image topic to opencv object and show
     def imageCallback(self, data):
@@ -42,11 +57,18 @@ class SeigoBot():
         except CvBridgeError as e:
             print(e)
 
+        # print(self.img);
+        frame = self.img
+        rects = self.find_rect_of_target_color(frame)
+        if len(rects) > 0:
+            rect = max(rects, key=(lambda x: x[2] * x[3]))
+            cv2.rectangle(frame, tuple(rect[0:2]), tuple(rect[0:2] + rect[2:4]), (0, 0, 255), thickness=2)
+            
         #    if self.camera_preview:
-        print("image show")
-        cv2.imshow("Image window", self.img)
+        # print("image show")
+        cv2.imshow("Image window", frame)
         cv2.waitKey(1)
-          
+
     def calcTwist(self):
         value = random.randint(1,1000)
         if value < 250:
