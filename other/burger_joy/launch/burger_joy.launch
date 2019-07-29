@@ -11,5 +11,9 @@
   <param name="axis_angular" value="0" type="int"/>
   <param name="scale_linear" value="2" type="double"/>
   <param name="scale_angular" value="2" type="double"/>
-  <node pkg="learning_joy" type="burger_teleop_joy" name="teleop"/>
+  <node pkg="burger_joy" type="burger_teleop_joy" name="teleop"/>
+
+ <!-- turtle_teleop_key -->
+  <node pkg="turtlesim" type="turtle_teleop_key" name="turtle_teleop_key"/>
+
 </launch>
