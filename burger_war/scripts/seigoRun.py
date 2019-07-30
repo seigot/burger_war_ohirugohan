@@ -38,8 +38,21 @@ class SeigoBot():
         hsv = cv2.cvtColor(image, cv2.COLOR_BGR2HSV_FULL)
         h = hsv[:, :, 0]
         s = hsv[:, :, 1]
+
+        # red detection
         mask = np.zeros(h.shape, dtype=np.uint8)
         mask[((h < 20) | (h > 200)) & (s > 128)] = 255
+
+        # blue detection
+        #lower_blue = np.array([130, 50, 50])
+        #upper_blue = np.array([200, 255, 255])
+        #mask = cv2.inRange(hsv, lower_blue, upper_blue)
+
+        # green detection
+        #lower_green = np.array([75, 50, 50])
+        #upper_green = np.array([110, 255, 255])
+        #mask = cv2.inRange(hsv, lower_green, upper_green)
+
         img, contours, _ = cv2.findContours(mask, cv2.RETR_TREE, cv2.CHAIN_APPROX_SIMPLE)
         #contours = cv2.findContours(mask, cv2.RETR_TREE, cv2.CHAIN_APPROX_SIMPLE)
         rects = []
