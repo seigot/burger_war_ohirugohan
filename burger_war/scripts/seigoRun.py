@@ -11,7 +11,8 @@ from cv_bridge import CvBridge, CvBridgeError
 import cv2
 import numpy as np
 import matplotlib.pyplot as plt
-
+import time
+ 
 # camera image 640*480
 img_w = 640
 img_h = 480
@@ -165,15 +166,8 @@ class SeigoBot():
         twist.angular.x = 0; twist.angular.y = 0; twist.angular.z = th
         return twist
 
-    def strategy(self):
+    def calcTwist_main(self):
         r = rospy.Rate(1) # change speed fps
-
-        target_speed = 0
-        target_turn = 0
-        control_speed = 0
-        control_turn = 0
-
-        # Main Loop --->
         while not rospy.is_shutdown():
             twist = self.calcTwist()
             print(twist)
@@ -181,6 +175,100 @@ class SeigoBot():
 
             r.sleep()
 
+    def getTwist(self, _x, _th):
+        twist = Twist()
+        x = _x
+        th = _th
+        twist.linear.x = x; twist.linear.y = 0; twist.linear.z = 0
+        twist.angular.x = 0; twist.angular.y = 0; twist.angular.z = th        
+        return twist
+    
+    def calcTwist_main2(self):
+        r = rospy.Rate(1) # change speed fps
+        time.sleep(1.000) # wait for init complete
+
+        # 1: get 1st target
+        twist = self.getTwist(0.2, 0)
+        self.vel_pub.publish(twist)
+        time.sleep(4.500)
+
+        twist = self.getTwist(-0.2, 0)
+        self.vel_pub.publish(twist)
+        time.sleep(2.000)
+
+        twist = self.getTwist(0, 0)
+        self.vel_pub.publish(twist)
+        time.sleep(0.5)
+
+        # 2: get 2nd target
+        twist = self.getTwist(0, np.pi/4)
+        self.vel_pub.publish(twist)
+        time.sleep(2.000)
+        
+        twist = self.getTwist(0.2, 0)
+        self.vel_pub.publish(twist)
+        time.sleep(2.000)
+
+        twist = self.getTwist(0, 0)
+        self.vel_pub.publish(twist)
+        time.sleep(0.5)
+        
+        twist = self.getTwist(0, np.pi/4)
+        self.vel_pub.publish(twist)
+        time.sleep(9.300) # (8.0 + noise = 9.2)
+
+        twist = self.getTwist(0, 0)
+        self.vel_pub.publish(twist)
+        time.sleep(0.5)
+        
+        # 3: get 3rd target
+        twist = self.getTwist(-0.2, 0)
+        self.vel_pub.publish(twist)
+        time.sleep(4.000)
+
+        twist = self.getTwist(0, np.pi/2)
+        self.vel_pub.publish(twist)
+        time.sleep(4.000)
+
+        twist = self.getTwist(0.2, 0)
+        self.vel_pub.publish(twist)
+        time.sleep(2.000)
+        
+        # 4
+        twist = self.getTwist(0, -1* np.pi/4)
+        self.vel_pub.publish(twist)
+        time.sleep(0.900)
+
+        twist = self.getTwist(0.2, 0)
+        self.vel_pub.publish(twist)
+        time.sleep(2.000)
+
+        twist = self.getTwist(0, np.pi/4)
+        self.vel_pub.publish(twist)
+        time.sleep(9.000)
+
+        twist = self.getTwist(0.2, 0)
+        self.vel_pub.publish(twist)
+        time.sleep(2.500)
+        
+        # keep rotation
+        while not rospy.is_shutdown():
+            x = 0
+            th = np.pi/2
+            twist.linear.x = x; twist.linear.y = 0; twist.linear.z = 0
+            twist.angular.x = 0; twist.angular.y = 0; twist.angular.z = th
+            self.vel_pub.publish(twist)
+            time.sleep(1.0)
+
+    def strategy(self):
+        target_speed = 0
+        target_turn = 0
+        control_speed = 0
+        control_turn = 0
+
+        # Main Loop --->
+        #self.calcTwist_main() 
+        self.calcTwist_main2()
         # Main Loop <---
         
 if __name__ == '__main__':
