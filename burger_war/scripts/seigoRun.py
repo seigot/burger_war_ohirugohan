@@ -11,12 +11,28 @@ from cv_bridge import CvBridge, CvBridgeError
 import cv2
 import numpy as np
 import matplotlib.pyplot as plt
+import matplotlib.patches as patches
 
 # camera image 640*480
 img_w = 640
 img_h = 480
 
+fieldWidth = 170
+fieldHeight = 170
+centerBoxWidth = 35
+centerBoxHeight = 35
+otherBoxWidth = 20
+otherBoxHeight = 15
+otherBoxDistance = 53
+
 class SeigoBot():
+    myPosX = 0
+    myPosY = -150
+    myDirect = np.pi / 2
+
+    lidarFig = plt.figure(figsize=(5,5))
+    mapFig = plt.figure(figsize=(5,5))
+
     def __init__(self, bot_name):
         # bot name 
         self.name = bot_name
@@ -43,14 +59,14 @@ class SeigoBot():
         self.scan = data
 
         # visualize scan data with radar chart
-        plt.cla();
         angles = np.linspace(0, 2 * np.pi, len(self.scan.ranges) + 1, endpoint=True)
         values = np.concatenate((self.scan.ranges, [self.scan.ranges[0]]))
-        ax = plt.subplot(111, polar=True)
+        ax = self.lidarFig.add_subplot(111, polar=True)
+        ax.cla()
         ax.plot(angles, values, 'o-')
         ax.fill(angles, values, alpha=0.25)
-        ax.set_rlim(0, 2.5)
-        plt.pause(0.05)
+        ax.set_rlim(0, 3.5)
+
         # print(self.scan)
         # print(self.scan.ranges[0])
         self.front_distance = self.scan.ranges[0]
@@ -163,7 +179,69 @@ class SeigoBot():
         twist = Twist()
         twist.linear.x = x; twist.linear.y = 0; twist.linear.z = 0
         twist.angular.x = 0; twist.angular.y = 0; twist.angular.z = th
+
+        self.drawMap()
+
         return twist
+
+    def drawMap(self):
+        myPosX = self.myPosX
+        myPosY = self.myPosY
+        myDirect = self.myDirect
+
+        ax = self.mapFig.add_subplot(111)
+        ax.cla()
+        ax.set_xlim(-fieldWidth, fieldWidth)
+        ax.set_ylim(-fieldHeight, fieldHeight)
+
+        r1 = patches.Rectangle(xy=(-centerBoxWidth / 2,-centerBoxHeight / 2),
+                               width=centerBoxWidth, height=centerBoxHeight,
+                               ec='#000000', fill=False)
+        r2 = patches.Rectangle(xy=(-otherBoxDistance - otherBoxWidth / 2,
+                                   -otherBoxDistance - otherBoxHeight / 2),
+                               width=otherBoxWidth, height=otherBoxHeight,
+                               ec='#000000', fill=False)
+        r3 = patches.Rectangle(xy=(+otherBoxDistance - otherBoxWidth / 2,
+                                   -otherBoxDistance - otherBoxHeight / 2),
+                               width=otherBoxWidth, height=otherBoxHeight,
+                               ec='#000000', fill=False)
+        r4 = patches.Rectangle(xy=(-otherBoxDistance - otherBoxWidth / 2,
+                                   +otherBoxDistance - otherBoxHeight / 2),
+                               width=otherBoxWidth, height=otherBoxHeight,
+                               ec='#000000', fill=False)
+        r5 = patches.Rectangle(xy=(+otherBoxDistance - otherBoxWidth / 2,
+                                   +otherBoxDistance - otherBoxHeight / 2),
+                               width=otherBoxWidth, height=otherBoxHeight,
+                            ec='#000000', fill=False)
+
+        a1 = patches.Arrow(myPosX, myPosY,
+                           np.cos(myDirect) * 15, np.sin(myDirect) * 15, 10, ec='#0000FF')
+
+        c1 = patches.Circle(xy=(myPosX, myPosY), radius=6, ec='#0000FF')
+
+        ax.add_patch(r1)
+        ax.add_patch(r2)
+        ax.add_patch(r3)
+        ax.add_patch(r4)
+        ax.add_patch(r5)
+        ax.add_patch(a1)
+        ax.add_patch(c1)
+
+        x = np.linspace(-fieldWidth, fieldWidth - 1, fieldWidth * 2)
+        y = x + fieldHeight
+        ax.plot(x, y, "r-")
+
+        x = np.linspace(-fieldWidth, fieldWidth - 1, fieldWidth * 2)
+        y = x - fieldHeight
+        ax.plot(x, y, "r-")
+
+        x = np.linspace(-fieldWidth, fieldWidth - 1, fieldWidth * 2)
+        y = -x + fieldHeight
+        ax.plot(x, y, "r-")
+
+        x = np.linspace(-fieldWidth, fieldWidth - 1, fieldWidth * 2)
+        y = -x - fieldHeight
+        ax.plot(x, y, "r-")
 
     def strategy(self):
         r = rospy.Rate(1) # change speed fps
@@ -175,6 +253,7 @@ class SeigoBot():
 
         # Main Loop --->
         while not rospy.is_shutdown():
+            plt.pause(0.05)
             twist = self.calcTwist()
             print(twist)
             self.vel_pub.publish(twist)
