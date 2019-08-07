@@ -5,6 +5,7 @@ import random
 
 from std_msgs.msg import String
 from geometry_msgs.msg import Twist
+import tf
 from sensor_msgs.msg import LaserScan
 from sensor_msgs.msg import Image
 from cv_bridge import CvBridge, CvBridgeError
@@ -16,7 +17,7 @@ import time
 import actionlib
 from move_base_msgs.msg import MoveBaseAction, MoveBaseGoal
 import actionlib_msgs
- 
+
 # camera image 640*480
 img_w = 640
 img_h = 480
@@ -287,72 +288,46 @@ class SeigoBot():
         return twist
     
     def calcTwist_main2(self):
+        twist = Twist()
         r = rospy.Rate(1) # change speed fps
         time.sleep(1.000) # wait for init complete
 
+        print("!!!!!! !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!! !!!!!!")
+        print("!                                                     !")
+        print("! do following command first for navigation           !")
+        print("! $ roslaunch burger_navigation multi_robot_navigation_run.launch !")
+        print("!                                                     !")
+        print("!!!!!! !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!! !!!!!!")
+        print("")
+        
         # 1: get 1st target
-        twist = self.getTwist(0.2, 0)
-        self.vel_pub.publish(twist)
-        time.sleep(4.500)
-
-        twist = self.getTwist(-0.2, 0)
-        self.vel_pub.publish(twist)
-        time.sleep(2.000)
-
-        twist = self.getTwist(0, 0)
-        self.vel_pub.publish(twist)
-        time.sleep(0.5)
+        self.setGoal(-0.5, 0, 0)
+        self.setGoal(-0.5, 0, 3.1415/2)
 
         # 2: get 2nd target
-        twist = self.getTwist(0, np.pi/4)
-        self.vel_pub.publish(twist)
-        time.sleep(2.000)
-        
-        twist = self.getTwist(0.2, 0)
-        self.vel_pub.publish(twist)
-        time.sleep(2.000)
-
-        twist = self.getTwist(0, 0)
-        self.vel_pub.publish(twist)
-        time.sleep(0.5)
-        
-        twist = self.getTwist(0, np.pi/4)
-        self.vel_pub.publish(twist)
-        time.sleep(9.300) # (8.0 + noise = 9.2)
-
-        twist = self.getTwist(0, 0)
-        self.vel_pub.publish(twist)
-        time.sleep(0.5)
+        self.setGoal(-0.9, 0.5, 3.1415/2)
+        self.setGoal(-0.9, 0.5, -3.1415/2)
         
         # 3: get 3rd target
-        twist = self.getTwist(-0.2, 0)
-        self.vel_pub.publish(twist)
-        time.sleep(4.000)
+        self.setGoal(-0.9, -0.5, -3.1415/2)
+        self.setGoal(-0.9, -0.5, 3.1415/2)        
 
-        twist = self.getTwist(0, 3.1415/2)
-        self.vel_pub.publish(twist)
-        time.sleep(4.000)
+        # Go back
+        self.setGoal(-0.5, 0, 0)
+        self.setGoal(-0.5, 0, 3.1415/2)
 
-        twist = self.getTwist(0.2, 0)
-        self.vel_pub.publish(twist)
-        time.sleep(2.000)
-        
-        # 4
-        twist = self.getTwist(0, -1* np.pi/4)
-        self.vel_pub.publish(twist)
-        time.sleep(0.900)
+        # 4: get 4th target
+        self.setGoal(-0.5, 0, 0)
+        self.setGoal(-0.5, 0, 3.1415/2)
 
-        twist = self.getTwist(0.2, 0)
-        self.vel_pub.publish(twist)
-        time.sleep(2.000)
+        self.setGoal(0, 0.5, 0)
+        self.setGoal(0, 0.5, 3.1415)
 
-        twist = self.getTwist(0, np.pi/4)
-        self.vel_pub.publish(twist)
-        time.sleep(9.000)
+        self.setGoal(-0.5,0,-3.1415/2)
 
-        twist = self.getTwist(0.2, 0)
-        self.vel_pub.publish(twist)
-        time.sleep(2.500)
+        # 5: get 5th target
+        self.setGoal(0, -0.5, 0)
+        self.setGoal(0, -0.5, 3.1415)
         
         # keep rotation
         while not rospy.is_shutdown():
@@ -375,7 +350,8 @@ class SeigoBot():
         # Main Loop <---
         
 if __name__ == '__main__':
-    rospy.init_node('seigo_run')
-    bot = SeigoBot('Seigo')
+    #rospy.init_node('seigo_run')
+    rospy.init_node('red_bot')
+    bot = SeigoBot('red_bot')
     bot.strategy()
 
