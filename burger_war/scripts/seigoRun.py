@@ -12,6 +12,9 @@ import cv2
 import numpy as np
 import matplotlib.pyplot as plt
 import time
+import actionlib
+from move_base_msgs.msg import MoveBaseAction, MoveBaseGoal
+import actionlib_msgs
  
 # camera image 640*480
 img_w = 640
@@ -23,6 +26,8 @@ class SeigoBot():
         self.name = bot_name
         # velocity publisher
         self.vel_pub = rospy.Publisher('cmd_vel', Twist,queue_size=1)
+        # navigation publisher
+        self.client = actionlib.SimpleActionClient('move_base',MoveBaseAction)
 
         # Lidar
         self.scan = LaserScan()
@@ -37,6 +42,32 @@ class SeigoBot():
         self.red_angle = -1 # init
         self.blue_angle = -1 # init
         self.green_angle = -1 # init
+
+    # Ref: https://hotblackrobotics.github.io/en/blog/2018/01/29/action-client-py/
+    # Ref: https://github.com/hotic06/burger_war/blob/master/burger_war/scripts/navirun.py
+    def setGoal(self,x,y,yaw):
+        self.client.wait_for_server()
+
+        goal = MoveBaseGoal()
+        goal.target_pose.header.frame_id = self.name + "/map"
+        goal.target_pose.header.stamp = rospy.Time.now()
+        goal.target_pose.pose.position.x = x
+        goal.target_pose.pose.position.y = y
+
+        # Euler to Quartanion
+        q=tf.transformations.quaternion_from_euler(0,0,yaw)        
+        goal.target_pose.pose.orientation.x = q[0]
+        goal.target_pose.pose.orientation.y = q[1]
+        goal.target_pose.pose.orientation.z = q[2]
+        goal.target_pose.pose.orientation.w = q[3]
+
+        self.client.send_goal(goal)
+        wait = self.client.wait_for_result()
+        if not wait:
+            rospy.logerr("Action server not available!")
+            rospy.signal_shutdown("Action server not available!")
+        else:
+            return self.client.get_result()
 
     # lidar scan topic call back sample
     # update lidar scan state
