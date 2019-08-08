@@ -129,8 +129,8 @@ class SeigoBot():
         print(state.data)
         dic = json.loads(state.data)
         tmp = int(dic["scores"]["r"])
-	if tmp > self.my_score and self.act_mode = ActMode.SNIPE:
-          self.act_mode = ActMode.SEARCH
+	if tmp > self.my_score and self.act_mode == ActMode.SNIPE:
+            self.act_mode = ActMode.SEARCH
         self.my_score = tmp
         print(self.my_score)
 
@@ -142,7 +142,7 @@ class SeigoBot():
         twist.angular.x = 0; twist.angular.y = 0; twist.angular.z = th
         return twist
 
-     def calcTwist(self):
+    def calcTwist(self):
         value = random.randint(1,1000)
         if value < 250:
             x = 0.2
