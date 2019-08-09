@@ -9,6 +9,8 @@ import tf
 from sensor_msgs.msg import LaserScan
 from sensor_msgs.msg import Image
 from cv_bridge import CvBridge, CvBridgeError
+from std_msgs.msg import String
+from enum import Enum
 import cv2
 import numpy as np
 import matplotlib.pyplot as plt
@@ -17,6 +19,7 @@ import time
 import actionlib
 from move_base_msgs.msg import MoveBaseAction, MoveBaseGoal
 import actionlib_msgs
+import json
 
 # camera image 640*480
 img_w = 640
@@ -30,13 +33,20 @@ otherBoxWidth = 20
 otherBoxHeight = 15
 otherBoxDistance = 53
 
+class ActMode(Enum):
+    SEARCH = 1
+    SNIPE  = 2
+    ESCAPE = 3
+    MOVE   = 4
+
 class SeigoBot():
     myPosX = 0
     myPosY = -150
     myDirect = np.pi / 2
     lidarFig = plt.figure(figsize=(5,5))
     mapFig = plt.figure(figsize=(5,5))
-
+    time_start = 0
+    
     def __init__(self, bot_name):
         # bot name 
         self.name = bot_name
@@ -59,6 +69,19 @@ class SeigoBot():
         self.blue_angle = -1 # init
         self.green_angle = -1 # init
 
+ 	# war status
+	self.war_state = rospy.Subscriber("/red_bot/war_state", String, self.stateCallback)
+        self.my_score = 0
+        self.act_mode = ActMode.SEARCH
+
+        # time
+        self.time_start = time.time()
+
+    def getElapsedTime(self):
+        time_current = time.time()
+        elapsed_time = time_current - self.time_start
+        return elapsed_time
+        
     # Ref: https://hotblackrobotics.github.io/en/blog/2018/01/29/action-client-py/
     # Ref: https://github.com/hotic06/burger_war/blob/master/burger_war/scripts/navirun.py
     # do following command first.
@@ -100,6 +123,7 @@ class SeigoBot():
         ax.plot(angles, values, 'o-')
         ax.fill(angles, values, alpha=0.25)
         ax.set_rlim(0, 3.5)
+        # plt.pause(0.05) # draw
 
         # print(self.scan)
         # print(self.scan.ranges[0])
@@ -181,6 +205,23 @@ class SeigoBot():
         # print("image show")
         cv2.imshow("Image window", frame)
         cv2.waitKey(1)
+
+    def stateCallback(self, state):
+        # print(state.data)
+        dic = json.loads(state.data)
+        tmp = int(dic["scores"]["r"])
+	if tmp > self.my_score and self.act_mode == ActMode.SNIPE:
+            self.act_mode = ActMode.SEARCH
+        self.my_score = tmp
+        print("my_sore", self.my_score)
+
+    def approachToMarker(self):
+        x = 0
+        th = 0
+        twist = Twist()
+        twist.linear.x = x; twist.linear.y = 0; twist.linear.z = 0
+        twist.angular.x = 0; twist.angular.y = 0; twist.angular.z = th
+        return twist
 
     def calcTwist(self):
         # randomRun
@@ -300,6 +341,9 @@ class SeigoBot():
         print("!!!!!! !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!! !!!!!!")
         print("")
         
+        ElapsedTime = self.getElapsedTime()
+        print("ElapsedTime",ElapsedTime)
+
         # 1: get 1st target
         self.setGoal(-0.5, 0, 0)
         self.setGoal(-0.5, 0, 3.1415/2)
@@ -345,8 +389,13 @@ class SeigoBot():
         control_turn = 0
 
         # Main Loop --->
-        #self.calcTwist_main() 
-        self.calcTwist_main2()
+        r = rospy.Rate(1) # change speed fps
+        while not rospy.is_shutdown():
+            print("act_mode: ", self.act_mode)
+            if self.act_mode == ActMode.SEARCH:
+                self.calcTwist_main2()
+                
+            r.sleep()
         # Main Loop <---
         
 if __name__ == '__main__':
