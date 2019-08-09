@@ -213,51 +213,16 @@ class SeigoBot():
 	if tmp > self.my_score and self.act_mode == ActMode.SNIPE:
             self.act_mode = ActMode.SEARCH
         self.my_score = tmp
+        print("---")
         print("my_sore", self.my_score)
-
+        print("elapsed_time", self.getElapsedTime())
+        
     def approachToMarker(self):
         x = 0
         th = 0
         twist = Twist()
         twist.linear.x = x; twist.linear.y = 0; twist.linear.z = 0
         twist.angular.x = 0; twist.angular.y = 0; twist.angular.z = th
-        return twist
-
-    def calcTwist(self):
-        # randomRun
-        # value = random.randint(1,1000)
-        # if value < 250:
-        #    x = 0.2
-        #    th = 0
-        # elif value < 500:
-        #    x = -0.2
-        #    th = 0
-        # elif value < 750:
-        #    x = 0
-        #    th = 1
-        # elif value < 1000:
-        #    x = 0
-        #    th = -1
-        # else:
-        #    x = 0
-        #    th = 0
-
-        # run with scan data..
-        print( self.front_distance )
-        if self.front_distance > 0.45:
-            x = 0.2
-            th = 0
-        else:
-            x = 0
-            th = (np.pi/4)
-
-        twist = Twist()
-        twist.linear.x = x; twist.linear.y = 0; twist.linear.z = 0
-        twist.angular.x = 0; twist.angular.y = 0; twist.angular.z = th
-
-        self.drawMap()
-        plt.pause(0.05)
-
         return twist
 
     def drawMap(self):
@@ -311,15 +276,6 @@ class SeigoBot():
         y = -x - fieldHeight
         ax.plot(x, y, "r-")
 
-    def calcTwist_main(self):
-        r = rospy.Rate(1) # change speed fps
-        while not rospy.is_shutdown():
-            twist = self.calcTwist()
-            print(twist)
-            self.vel_pub.publish(twist)
-
-            r.sleep()
-
     def getTwist(self, _x, _th):
         twist = Twist()
         x = _x
@@ -327,8 +283,9 @@ class SeigoBot():
         twist.linear.x = x; twist.linear.y = 0; twist.linear.z = 0
         twist.angular.x = 0; twist.angular.y = 0; twist.angular.z = th        
         return twist
-    
-    def calcTwist_main2(self):
+
+    def func_init(self):
+        print("func_init")
         twist = Twist()
         r = rospy.Rate(1) # change speed fps
         time.sleep(1.000) # wait for init complete
@@ -337,6 +294,7 @@ class SeigoBot():
         print("!                                                     !")
         print("! do following command first for navigation           !")
         print("! $ roslaunch burger_navigation multi_robot_navigation_run.launch !")
+        print("! $ rosservice call /gazebo/reset_simulation {}       !")
         print("!                                                     !")
         print("!!!!!! !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!! !!!!!!")
         print("")
@@ -344,56 +302,99 @@ class SeigoBot():
         ElapsedTime = self.getElapsedTime()
         print("ElapsedTime",ElapsedTime)
 
+        return
+    
+    def func_search(self):
+        print("func_search")
+        twist = Twist()
+        
         # 1: get 1st target
-        self.setGoal(-0.5, 0, 0)
-        self.setGoal(-0.5, 0, 3.1415/2)
+        self.setGoal(-0.9, 0.5, 0)
 
         # 2: get 2nd target
-        self.setGoal(-0.9, 0.5, 3.1415/2)
-        self.setGoal(-0.9, 0.5, -3.1415/2)
-        
-        # 3: get 3rd target
-        self.setGoal(-0.9, -0.5, -3.1415/2)
-        self.setGoal(-0.9, -0.5, 3.1415/2)        
+        self.setGoal(-0.9, -0.5, 0)
 
-        # Go back
-        self.setGoal(-0.5, 0, 0)
-        self.setGoal(-0.5, 0, 3.1415/2)
+        # 3: get 3rd target
+        self.setGoal(-0.8, 0.0, 0)
+        self.setGoal(-0.4, 0.0, 0)
+        # back
+        twist = self.getTwist(-0.4, 0)
+        self.vel_pub.publish(twist)
+        time.sleep(1.0)
+        
+        # 4.0: check witch direction the enemy exists..
+        # self.setGoal(0, 0.5, 0)
+        # self.setGoal(0, 0.5, 3.1415)
+        # self.setGoal(-0.5,0,-3.1415/2)
 
         # 4: get 4th target
-        self.setGoal(-0.5, 0, 0)
-        self.setGoal(-0.5, 0, 3.1415/2)
-
-        self.setGoal(0, 0.5, 0)
-        self.setGoal(0, 0.5, 3.1415)
-
-        self.setGoal(-0.5,0,-3.1415/2)
-
-        # 5: get 5th target
-        self.setGoal(0, -0.5, 0)
-        self.setGoal(0, -0.5, 3.1415)
+        # turn
+        #twist = self.getTwist(0.0, -3.1415/2)
+        #self.vel_pub.publish(twist)
+        #time.sleep(1.0)
         
+        self.setGoal(0, -0.5, 0)
+        # turn around
+        twist = self.getTwist(0, 3.1415/1.5)
+        self.vel_pub.publish(twist)
+        time.sleep(3.0)
+
+        self.act_mode = ActMode.SNIPE # transition to SNIPE
+
+    def func_snipe(self):
+        print("func_snipe")
+        twist = Twist()
+        
+        # 1: go to snipe position
+        self.setGoal(0, -0.5, 3.1415/2)
+        twist = self.getTwist(-0.4, 0)
+        self.vel_pub.publish(twist)
+        time.sleep(2.0)
+
         # keep rotation
+        cnt = 0
         while not rospy.is_shutdown():
-            x = 0
-            th = np.pi/2
-            twist.linear.x = x; twist.linear.y = 0; twist.linear.z = 0
-            twist.angular.x = 0; twist.angular.y = 0; twist.angular.z = th
+            if cnt%2 == 0:
+                twist = self.getTwist(0, 3.1415/2)
+            else: # if cnt%2 == 1:
+                twist = self.getTwist(0, -1*3.1415/2)
             self.vel_pub.publish(twist)
-            time.sleep(1.0)
+            time.sleep(1.5)
+            cnt+=1
+            
+        #self.act_mode = ActMode.ESCAPE # transition to ESCAPE
+        #self.act_mode = ActMode.MOVE # transition to MOVE
+        return
+
+    def func_escape(self):
+        print("func_snipe")        
+
+    def func_move(self):
+        print("func_move")
+        return
 
     def strategy(self):
         target_speed = 0
         target_turn = 0
         control_speed = 0
         control_turn = 0
-
+     
         # Main Loop --->
+        self.func_init()
         r = rospy.Rate(1) # change speed fps
         while not rospy.is_shutdown():
             print("act_mode: ", self.act_mode)
-            if self.act_mode == ActMode.SEARCH:
-                self.calcTwist_main2()
+
+            if self.act_mode == ActMode.SEARCH:  # SEARCH
+                self.func_search()
+            elif self.act_mode == ActMode.SNIPE: # SNIPE
+                self.func_snipe()
+            elif self.act_mode == ActMode.ESCAPE: # ESCAPE
+                self.func_escape()
+            elif self.act_mode == ActMode.MOVE:   # MOVE
+                self.func_move()
+            else:
+                print("act_mode: ", self.act_mode)
                 
             r.sleep()
         # Main Loop <---
