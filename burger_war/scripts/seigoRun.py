@@ -38,6 +38,9 @@ class ActMode(Enum):
     SNIPE  = 2
     ESCAPE = 3
     MOVE   = 4
+    BASIC  = 5
+
+    # (start) BASIC --> SNIPE --> SEARCH or ESCAPE or MOVE --> (end)
 
 class SeigoBot():
     myPosX = 0
@@ -48,7 +51,7 @@ class SeigoBot():
     time_start = 0
     
     def __init__(self, bot_name):
-        # bot name 
+        # bot name
         self.name = bot_name
         # velocity publisher
         self.vel_pub = rospy.Publisher('cmd_vel', Twist,queue_size=1)
@@ -57,22 +60,26 @@ class SeigoBot():
 
         # Lidar
         self.scan = LaserScan()
-        self.lidar_sub = rospy.Subscriber('/red_bot/scan', LaserScan, self.lidarCallback)
+        topicname_scan = "/" + self.name + "/scan"
+        self.lidar_sub = rospy.Subscriber(topicname_scan, LaserScan, self.lidarCallback)
         self.front_distance = 10000 # init
 
         # usb camera
         self.img = None
         self.camera_preview = True
         self.bridge = CvBridge()
-        self.image_sub = rospy.Subscriber('/red_bot/image_raw', Image, self.imageCallback)
+        topicname_image_raw = "/" + self.name + "/image_raw"
+        self.image_sub = rospy.Subscriber(topicname_image_raw, Image, self.imageCallback)
         self.red_angle = -1 # init
         self.blue_angle = -1 # init
         self.green_angle = -1 # init
 
  	# war status
-	self.war_state = rospy.Subscriber("/red_bot/war_state", String, self.stateCallback)
+        topicname_war_state = "/" + self.name + "/war_state"
+	self.war_state = rospy.Subscriber(topicname_war_state, String, self.stateCallback)
         self.my_score = 0
-        self.act_mode = ActMode.SEARCH
+        self.enemy_score = 0
+        self.act_mode = ActMode.BASIC
 
         # time
         self.time_start = time.time()
@@ -115,18 +122,29 @@ class SeigoBot():
     def lidarCallback(self, data):
         self.scan = data
 
-        # visualize scan data with radar chart
+        plt.cla();
         angles = np.linspace(0, 2 * np.pi, len(self.scan.ranges) + 1, endpoint=True)
         values = np.concatenate((self.scan.ranges, [self.scan.ranges[0]]))
-        ax = self.lidarFig.add_subplot(111, polar=True)
-        ax.cla()
+        ax = plt.subplot(111, polar=True)
         ax.plot(angles, values, 'o-')
         ax.fill(angles, values, alpha=0.25)
-        ax.set_rlim(0, 3.5)
+        ax.set_rlim(0, 2.5)
+        # plt.pause(0.05)
+        
+        # ---> 
+        # visualize scan data with radar chart
+        #angles = np.linspace(0, 2 * np.pi, len(self.scan.ranges) + 1, endpoint=True)
+        # values = np.concatenate((self.scan.ranges, [self.scan.ranges[0]]))
+        # ax = self.lidarFig.add_subplot(111, polar=True)
+        # ax.cla()
+        # ax.plot(angles, values, 'o-')
+        # ax.fill(angles, values, alpha=0.25)
+        # ax.set_rlim(0, 3.5)
         # plt.pause(0.05) # draw
-
+        # 
         # print(self.scan)
         # print(self.scan.ranges[0])
+        # ---<
         self.front_distance = self.scan.ranges[0]
 
     def find_rect_of_target_color(self, image, color_type): # r:0, g:1, b:2
@@ -210,11 +228,14 @@ class SeigoBot():
         # print(state.data)
         dic = json.loads(state.data)
         tmp = int(dic["scores"]["r"])
-	if tmp > self.my_score and self.act_mode == ActMode.SNIPE:
+	if tmp > self.my_score and self.act_mode == ActMode.SNIPE and self.getElapsedTime() > 120 :
             self.act_mode = ActMode.SEARCH
         self.my_score = tmp
+        self.enemy_score = int(dic["scores"]["b"])
+
         print("---")
         print("my_sore", self.my_score)
+        print("enemy_score", self.enemy_score)
         print("elapsed_time", self.getElapsedTime())
         
     def approachToMarker(self):
@@ -304,8 +325,8 @@ class SeigoBot():
 
         return
     
-    def func_search(self):
-        print("func_search")
+    def func_basic(self):
+        print("func_basic")
         twist = Twist()
         
         # 1: get 1st target
@@ -322,16 +343,7 @@ class SeigoBot():
         self.vel_pub.publish(twist)
         time.sleep(1.0)
         
-        # 4.0: check witch direction the enemy exists..
-        # self.setGoal(0, 0.5, 0)
-        # self.setGoal(0, 0.5, 3.1415)
-        # self.setGoal(-0.5,0,-3.1415/2)
-
-        # 4: get 4th target
-        # turn
-        #twist = self.getTwist(0.0, -3.1415/2)
-        #self.vel_pub.publish(twist)
-        #time.sleep(1.0)
+        # 4.0: check witch direction the enemy exists.. [TODO]
         
         self.setGoal(0, -0.5, 0)
         # turn around
@@ -350,27 +362,44 @@ class SeigoBot():
         twist = self.getTwist(-0.4, 0)
         self.vel_pub.publish(twist)
         time.sleep(2.0)
-
-        # keep rotation
+        self.setGoal(0, -1.3, 3.1415/2)
+        
+        # keep sniping..
         cnt = 0
+        twist = self.getTwist(0, -1*3.1415/2)
+        self.vel_pub.publish(twist)
+        time.sleep(1.25)
+
+        rate=1500
+        r = rospy.Rate(rate) # change speed fps
         while not rospy.is_shutdown():
             if cnt%2 == 0:
                 twist = self.getTwist(0, 3.1415/2)
             else: # if cnt%2 == 1:
                 twist = self.getTwist(0, -1*3.1415/2)
             self.vel_pub.publish(twist)
-            time.sleep(1.5)
+            for i in range(rate):
+                r.sleep()
             cnt+=1
             
+        #self.act_mode = ActMode.SEARCH # transition to ESCAPE
         #self.act_mode = ActMode.ESCAPE # transition to ESCAPE
         #self.act_mode = ActMode.MOVE # transition to MOVE
         return
 
+    def func_search(self):
+        print("func_search")
+        # [TODO]
+        return
+    
     def func_escape(self):
-        print("func_snipe")        
+        print("func_escape")        
+        # [TODO]
+        return
 
     def func_move(self):
         print("func_move")
+        # [TODO]
         return
 
     def strategy(self):
@@ -385,10 +414,12 @@ class SeigoBot():
         while not rospy.is_shutdown():
             print("act_mode: ", self.act_mode)
 
-            if self.act_mode == ActMode.SEARCH:  # SEARCH
-                self.func_search()
+            if self.act_mode == ActMode.BASIC:
+                self.func_basic()
             elif self.act_mode == ActMode.SNIPE: # SNIPE
                 self.func_snipe()
+            elif self.act_mode == ActMode.SEARCH:  # SEARCH
+                self.func_search()
             elif self.act_mode == ActMode.ESCAPE: # ESCAPE
                 self.func_escape()
             elif self.act_mode == ActMode.MOVE:   # MOVE
