@@ -33,6 +33,17 @@ otherBoxWidth = 20
 otherBoxHeight = 15
 otherBoxDistance = 53
 
+# color definition
+RED   = 1
+GREEN = 2
+BLUE  = 3
+
+# target angle init value
+COLOR_TARGET_ANGLE_INIT_VAL = -360
+
+# PI
+PI = 3.1415
+
 class ActMode(Enum):
     SEARCH = 1
     SNIPE  = 2
@@ -53,6 +64,10 @@ class SeigoBot():
     def __init__(self, bot_name):
         # bot name
         self.name = bot_name
+        # robot_name = rospy.get_param('~robot_name') # red_bot or blue_bot
+        # self.name = robot_name
+        # print(robot_name)
+        
         # velocity publisher
         self.vel_pub = rospy.Publisher('cmd_vel', Twist,queue_size=1)
         # navigation publisher
@@ -70,9 +85,9 @@ class SeigoBot():
         self.bridge = CvBridge()
         topicname_image_raw = "/" + self.name + "/image_raw"
         self.image_sub = rospy.Subscriber(topicname_image_raw, Image, self.imageCallback)
-        self.red_angle = -1 # init
-        self.blue_angle = -1 # init
-        self.green_angle = -1 # init
+        self.red_angle = COLOR_TARGET_ANGLE_INIT_VAL # init
+        self.blue_angle = COLOR_TARGET_ANGLE_INIT_VAL # init
+        self.green_angle = COLOR_TARGET_ANGLE_INIT_VAL # init
 
  	# war status
         topicname_war_state = "/" + self.name + "/war_state"
@@ -91,6 +106,7 @@ class SeigoBot():
         
     # Ref: https://hotblackrobotics.github.io/en/blog/2018/01/29/action-client-py/
     # Ref: https://github.com/hotic06/burger_war/blob/master/burger_war/scripts/navirun.py
+    # RESPECT @hotic06
     # do following command first.
     #   $ roslaunch burger_navigation multi_robot_navigation_run.launch
     def setGoal(self,x,y,yaw):
@@ -153,18 +169,18 @@ class SeigoBot():
         s = hsv[:, :, 1]
 
         # red detection
-        if color_type == 0:
+        if color_type == RED:
             mask = np.zeros(h.shape, dtype=np.uint8)
             mask[((h < 20) | (h > 200)) & (s > 128)] = 255
 
         # blue detection
-        if color_type == 2:
+        if color_type == BLUE:
             lower_blue = np.array([130, 50, 50])
             upper_blue = np.array([200, 255, 255])
             mask = cv2.inRange(hsv, lower_blue, upper_blue)
 
         # green detection
-        if color_type == 1:
+        if color_type == GREEN:
             lower_green = np.array([75, 50, 50])
             upper_green = np.array([110, 255, 255])
             mask = cv2.inRange(hsv, lower_green, upper_green)
@@ -190,35 +206,41 @@ class SeigoBot():
         # print(self.img);
         frame = self.img
         # red
-        rects = self.find_rect_of_target_color(frame, 0)
+        rects = self.find_rect_of_target_color(frame, RED)
         if len(rects) > 0:
             rect = max(rects, key=(lambda x: x[2] * x[3]))
             cv2.rectangle(frame, tuple(rect[0:2]), tuple(rect[0:2] + rect[2:4]), (0, 0, 255), thickness=2)
             # angle(rad)
-            tmp_angle = ((rect[0:2]+rect[0:2]+rect[2:4])/2-(img_w/2)) *0.077
+            tmp_angle = ((rect[0]+rect[0]+rect[2])/2-(img_w/2)) *0.077
             self.red_angle = tmp_angle * np.pi / 180
-            # print ( tmp_angle )
+            # print ("red_angle", tmp_angle, self.red_angle )
+        else:
+            self.red_angle = COLOR_TARGET_ANGLE_INIT_VAL
 
         # green
-        rects = self.find_rect_of_target_color(frame, 1)
+        rects = self.find_rect_of_target_color(frame, GREEN)
         if len(rects) > 0:
             rect = max(rects, key=(lambda x: x[2] * x[3]))
             cv2.rectangle(frame, tuple(rect[0:2]), tuple(rect[0:2] + rect[2:4]), (0, 0, 255), thickness=2)
             # angle(rad)
-            tmp_angle = ((rect[0:2]+rect[0:2]+rect[2:4])/2-(img_w/2)) *0.077
+            tmp_angle = ((rect[0]+rect[0]+rect[2])/2-(img_w/2)) *0.077
             self.green_angle = tmp_angle * np.pi / 180
-            # print ( tmp_angle )
+            # print ("green_angle", tmp_angle, self.green_angle )
+        else:
+            self.green_angle = COLOR_TARGET_ANGLE_INIT_VAL
 
         # blue
-        rects = self.find_rect_of_target_color(frame, 2)
+        rects = self.find_rect_of_target_color(frame, BLUE)
         if len(rects) > 0:
             rect = max(rects, key=(lambda x: x[2] * x[3]))
             cv2.rectangle(frame, tuple(rect[0:2]), tuple(rect[0:2] + rect[2:4]), (0, 0, 255), thickness=2)
             # angle(rad)
-            tmp_angle = ((rect[0:2]+rect[0:2]+rect[2:4])/2-(img_w/2)) *0.077
+            tmp_angle = ((rect[0]+rect[0]+rect[2])/2-(img_w/2)) *0.077
             self.blue_angle = tmp_angle * np.pi / 180
-            # print ( tmp_angle )
-            
+            # print ("blue_angle", tmp_angle, self.blue_angle )
+        else:
+            self.blue_angle = COLOR_TARGET_ANGLE_INIT_VAL
+
         #    if self.camera_preview:
         # print("image show")
         cv2.imshow("Image window", frame)
@@ -245,6 +267,31 @@ class SeigoBot():
         twist.linear.x = x; twist.linear.y = 0; twist.linear.z = 0
         twist.angular.x = 0; twist.angular.y = 0; twist.angular.z = th
         return twist
+
+    def keepMarkerToCenter(self, color_type):
+
+        angle = COLOR_TARGET_ANGLE_INIT_VAL
+	if color_type == RED:
+            angle = self.red_angle
+	elif color_type == GREEN:
+            angle = self.green_angle
+	elif color_type == BLUE:
+            angle = self.blue_angle
+        else:
+            print("invalid color_type", color_type)
+            return
+
+        if angle == COLOR_TARGET_ANGLE_INIT_VAL:
+            return -1
+        
+        x = 0
+        th = angle * (-1) # rad
+        twist = Twist()
+        twist.linear.x = x; twist.linear.y = 0; twist.linear.z = 0
+        twist.angular.x = 0; twist.angular.y = 0; twist.angular.z = th
+        self.vel_pub.publish(twist)
+
+        return 0
 
     def drawMap(self):
         myPosX = self.myPosX
@@ -347,7 +394,7 @@ class SeigoBot():
         
         self.setGoal(0, -0.5, 0)
         # turn around
-        twist = self.getTwist(0, 3.1415/1.5)
+        twist = self.getTwist(0, PI/1.5)
         self.vel_pub.publish(twist)
         time.sleep(3.0)
 
@@ -358,11 +405,11 @@ class SeigoBot():
         twist = Twist()
         
         # 1: go to snipe position
-        self.setGoal(0, -0.5, 3.1415/2)
+        self.setGoal(0, -0.5, PI/2)
         twist = self.getTwist(-0.4, 0)
         self.vel_pub.publish(twist)
         time.sleep(2.0)
-        self.setGoal(0, -1.3, 3.1415/2)
+        self.setGoal(0, -1.2, PI/2)
         
         # keep sniping..
         cnt = 0
@@ -379,6 +426,9 @@ class SeigoBot():
                 twist = self.getTwist(0, -1*3.1415/2)
             self.vel_pub.publish(twist)
             for i in range(rate):
+                ret = self.keepMarkerToCenter(RED)
+                if ret == -1:
+                    print("no color target found...")
                 r.sleep()
             cnt+=1
             
