@@ -7,8 +7,11 @@ from std_msgs.msg import String
 from geometry_msgs.msg import Twist
 from sensor_msgs.msg import LaserScan
 from sensor_msgs.msg import Image
+from sensor_msgs.msg import JointState
 from cv_bridge import CvBridge, CvBridgeError
+import time
 import cv2
+import enemyTable as eT
 import numpy as np
 import matplotlib.pyplot as plt
 import matplotlib.patches as patches
@@ -24,6 +27,11 @@ centerBoxHeight = 35
 otherBoxWidth = 20
 otherBoxHeight = 15
 otherBoxDistance = 53
+
+FIND_ENEMY_SEARCH = 0
+FIND_ENEMY_FOUND = 1
+FIND_ENEMY_WAIT = 2
+FIND_ENEMY_LOOKON = 3
 
 class SeigoBot():
     myPosX = 0
@@ -43,6 +51,7 @@ class SeigoBot():
         self.scan = LaserScan()
         self.lidar_sub = rospy.Subscriber('/red_bot/scan', LaserScan, self.lidarCallback)
         self.front_distance = 10000 # init
+        self.front_scan = 1000
 
         # usb camera
         self.img = None
@@ -52,6 +61,35 @@ class SeigoBot():
         self.red_angle = -1 # init
         self.blue_angle = -1 # init
         self.green_angle = -1 # init
+
+        self.find_enemy = FIND_ENEMY_SEARCH
+        self.find_wait = 0
+        self.enemy_direct = 1
+
+        # joint
+        self.joint = JointState()
+        self.joint_sub = rospy.Subscriber('joint_states', JointState, self.jointstateCallback)
+        self.wheel_rot_r = 0
+        self.wheel_rot_l = 0
+        self.moving = False
+
+        # twist
+        self.x = 0;
+        self.th = 0;
+
+    def jointstateCallback(self, data):
+        # Is moving?
+        if np.abs(self.wheel_rot_r - data.position[0]) < 0.01 and np.abs(self.wheel_rot_l - data.position[1]) < 0.01:
+            if self.moving is True:
+                print "Stop!"
+            self.moving = False
+        else:
+            if self.moving is False:
+                print "Move!"
+            self.moving = True
+
+        self.wheel_rot_r = data.position[0]
+        self.wheel_rot_l = data.position[1]
 
     # lidar scan topic call back sample
     # update lidar scan state
@@ -69,7 +107,9 @@ class SeigoBot():
 
         # print(self.scan)
         # print(self.scan.ranges[0])
-        self.front_distance = self.scan.ranges[0]
+        # self.front_distance = self.scan.ranges[0]
+        self.front_distance = min(min(self.scan.ranges[0:10]),min(self.scan.ranges[350:359]))
+        self.front_scan = (sum(self.scan.ranges[0:4])+sum(self.scan.ranges[355:359])) / 10
 
     def find_rect_of_target_color(self, image, color_type): # r:0, g:1, b:2
         hsv = cv2.cvtColor(image, cv2.COLOR_BGR2HSV_FULL)
@@ -106,6 +146,8 @@ class SeigoBot():
     # camera image call back sample
     # comvert image topic to opencv object and show
     def imageCallback(self, data):
+        redFound = False
+        greenFound = False
         try:
             self.img = self.bridge.imgmsg_to_cv2(data, "bgr8")
         except CvBridgeError as e:
@@ -122,6 +164,8 @@ class SeigoBot():
             tmp_angle = ((rect[0:2]+rect[0:2]+rect[2:4])/2-(img_w/2)) *0.077
             self.red_angle = tmp_angle * np.pi / 180
             # print ( tmp_angle )
+            redFound = True
+            self.trackEnemy(rect)
 
         # green
         rects = self.find_rect_of_target_color(frame, 1)
@@ -132,6 +176,12 @@ class SeigoBot():
             tmp_angle = ((rect[0:2]+rect[0:2]+rect[2:4])/2-(img_w/2)) *0.077
             self.green_angle = tmp_angle * np.pi / 180
             # print ( tmp_angle )
+            if  redFound is False:
+                greenFound = True
+                self.trackEnemy(rect)
+
+        if redFound is False and greenFound is False:
+            self.trackEnemy(None)
 
         # blue
         rects = self.find_rect_of_target_color(frame, 2)
@@ -148,38 +198,92 @@ class SeigoBot():
         cv2.imshow("Image window", frame)
         cv2.waitKey(1)
 
-    def calcTwist(self):
-        # randomRun
-        # value = random.randint(1,1000)
-        # if value < 250:
-        #    x = 0.2
-        #    th = 0
-        # elif value < 500:
-        #    x = -0.2
-        #    th = 0
-        # elif value < 750:
-        #    x = 0
-        #    th = 1
-        # elif value < 1000:
-        #    x = 0
-        #    th = -1
-        # else:
-        #    x = 0
-        #    th = 0
+    def trackEnemy(self, rect):
+        # Found enemy
+        if rect is not None:
+            # Estimate the distance from enemy.
+            if rect[1] < len(eT.enemyTable):
+                d = eT.enemyTable[rect[1]] if eT.enemyTable[rect[1]] > 0 else 1
+            else:
+                d = 1
+            # Estimate acceleration parameter
+            d = d / (np.abs(rect[0] + rect[2] / 2.0 - img_w / 2.0) / float(img_w) * 4)
+            # Decide the direction and the radian.
+            if (rect[0] + rect[2] / 2.0) > img_w / 2.0:
+                self.enemy_direct = -1 * d
+            else:
+                self.enemy_direct = 1 * d
+            # Change state
+            if self.find_enemy == FIND_ENEMY_SEARCH:
+                # SEARCH->FOUND (Quick move)
+                self.find_enemy = FIND_ENEMY_FOUND
+                self.th = np.pi / 2.0 / self.enemy_direct
+            else:
+                # Maybe FOUND->LOOKON (Slow move)
+                self.find_enemy = FIND_ENEMY_LOOKON
+                self.th = np.pi / 16.0 / self.enemy_direct
+            print("Found enemy")
 
-        # run with scan data..
-        print( self.front_distance )
-        if self.front_distance > 0.45:
-            x = 0.2
-            th = 0
         else:
-            x = 0
-            th = (np.pi/4)
+            # Lost enemy...
+            # State change
+            # LOOKON -> WAIT
+            if self.find_enemy == FIND_ENEMY_LOOKON:
+                self.find_wait = time.time()
+                self.find_enemy = FIND_ENEMY_WAIT
+                print("Wait for re-found")
+            # WAIT -> SEARCH
+            elif self.find_enemy == FIND_ENEMY_WAIT:
+                if time.time() - self.find_wait > 10:
+                    self.find_enemy = FIND_ENEMY_SEARCH
+                    print("Start Search...")
 
+            if self.find_enemy == FIND_ENEMY_SEARCH:
+                # Search enemy
+                # Default radian (PI/2)
+                left_scan = np.pi / 2.0
+                right_scan = np.pi / 2.0 * -1
+                self.enemy_direct = self.enemy_direct / np.abs(self.enemy_direct)
+                if self.scan.ranges is None or self.moving is True:
+                    # Now moving, do nothing!
+                    print("Skip")
+                    self.th = 0
+                else:
+                    # Is there something ahead?
+                    if np.max(self.scan.ranges[0:5]) < 1.0 and np.max(self.scan.ranges[355:359]) < 1.0:
+                        # Check both side, I do not watch the wall!
+                        print("Blind")
+                        if self.enemy_direct > 0 and np.max(self.scan.ranges[80:100]) < 1.0:
+                            self.enemy_direct = self.enemy_direct * -1
+                        if self.enemy_direct < 0 and np.max(self.scan.ranges[260:280]) < 1.0:
+                            self.enemy_direct = self.enemy_direct * -1
+                    else:
+                        # Calc radian
+                        for i in range(5, 90, 1):
+                            if np.max(self.scan.ranges[i - 5:i + 5]) < 0.7:
+                                self.enemy_direct = self.enemy_direct * -1
+                                break
+                        left_scan = np.pi * i / 180.0
+                        for i in range(354, 270, -1):
+                            if np.max(self.scan.ranges[i - 5:i + 5]) < 0.7:
+                                self.enemy_direct = self.enemy_direct * -1
+                                break
+                        right_scan = np.pi * (i - 360) / 180.0
+                    # Set radian for twist
+                    if self.enemy_direct < 0:
+                        self.th = right_scan
+                    else:
+                        self.th = left_scan
+            print("Lost enemy")
+
+    def calcTwist(self):
+        x = 0
+        th = self.th
         twist = Twist()
         twist.linear.x = x; twist.linear.y = 0; twist.linear.z = 0
         twist.angular.x = 0; twist.angular.y = 0; twist.angular.z = th
 
+        self.vel_pub.publish(twist)
         self.drawMap()
 
         return twist
@@ -255,8 +359,7 @@ class SeigoBot():
         while not rospy.is_shutdown():
             plt.pause(0.05)
             twist = self.calcTwist()
-            print(twist)
-            self.vel_pub.publish(twist)
+            #print(twist)
 
             r.sleep()
 

@@ -28,7 +28,7 @@ class SioBot():
         self.pose_y = 0
 
         # speed [m/s]
-        self.speed = 0.25
+        self.speed = 0.5
 
         # publisher
         self.vel_pub = rospy.Publisher('cmd_vel', Twist,queue_size=1)
@@ -58,25 +58,33 @@ class SioBot():
         '''
         if self.state == 'go':
             # set speed x axis
-            x = self.speed
+            x = -1
+            # x = self.speed
+            #z = 0.08
+            z = 0
         elif self.state == 'back':
             # set speed x axis
-            x = -1 * self.speed
+            x = -1
+            #x = -1 * self.speed
+            #z = 0.08
+            z = 0
         else:
             # error state
             x = 0
+            z = 0
             rospy.logerr("SioBot state is invalid value %s", self.state)
 
         twist = Twist()
         twist.linear.x = x; twist.linear.y = 0; twist.linear.z = 0
-        twist.angular.x = 0; twist.angular.y = 0; twist.angular.z = 0
+        twist.angular.x = 0; twist.angular.y = 0; twist.angular.z = z
         return twist
 
     def calcState(self):
         '''
         update robot state 'go' or 'back'
         '''
-        if self.state == 'go' and self.wheel_rot_r > 30:
+        # print("enemy:wheel_rot_r="+str(self.wheel_rot_r))
+        if self.state == 'go' and self.wheel_rot_r > 75:
             self.state = 'back'
         elif self.state == 'back' and self.wheel_rot_r < 5:
             self.state = 'go'
