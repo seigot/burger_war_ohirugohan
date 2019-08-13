@@ -400,7 +400,7 @@ class SeigoBot():
                 left_scan = np.pi / 2.0
                 right_scan = np.pi / 2.0 * -1
                 self.enemy_direct = self.enemy_direct / np.abs(self.enemy_direct)
-                if self.scan.ranges is None or self.moving is True:
+                if self.scan.ranges is None or self.moving is True or self.front_distance == DISTANCE_TO_ENEMY_INIT_VAL:
                     # Now moving, do nothing!
                     print("Skip")
                     self.th = 0
