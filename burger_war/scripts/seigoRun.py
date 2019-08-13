@@ -5,6 +5,7 @@ import random
 
 from std_msgs.msg import String
 from geometry_msgs.msg import Twist
+from geometry_msgs.msg import PoseWithCovarianceStamped
 import tf
 from sensor_msgs.msg import LaserScan
 from sensor_msgs.msg import Image
@@ -20,6 +21,7 @@ import matplotlib.patches as patches
 import time
 import actionlib
 from move_base_msgs.msg import MoveBaseAction, MoveBaseGoal
+from nav_msgs.msg import Odometry
 import actionlib_msgs
 import json
 
@@ -42,6 +44,8 @@ BLUE  = 3
 
 # target angle init value
 COLOR_TARGET_ANGLE_INIT_VAL = -360
+# distance to enemy init value
+DISTANCE_TO_ENEMY_INIT_VAL = 1000
 
 # PI
 PI = 3.1415
@@ -85,8 +89,8 @@ class SeigoBot():
         self.scan = LaserScan()
         topicname_scan = "/" + self.name + "/scan"
         self.lidar_sub = rospy.Subscriber(topicname_scan, LaserScan, self.lidarCallback)
-        self.front_distance = 10000 # init
-        self.front_scan = 1000
+        self.front_distance = DISTANCE_TO_ENEMY_INIT_VAL # init
+        self.front_scan = DISTANCE_TO_ENEMY_INIT_VAL
  
         # usb camera
         self.img = None
@@ -121,8 +125,27 @@ class SeigoBot():
         self.enemy_score = 0
         self.act_mode = ActMode.BASIC
 
+        # odom
+        topicname_odom = "/" + self.name + "/odom"
+	self.odom = rospy.Subscriber(topicname_odom, Odometry, self.odomCallback)
+
+        # amcl pose
+        topicname_amcl_pose = "/" + self.name + "/amcl_pose"
+	self.amcl_pose = rospy.Subscriber(topicname_amcl_pose, PoseWithCovarianceStamped, self.AmclPoseCallback)
+        
         # time
         self.time_start = time.time()
+
+    def odomCallback(self, data):
+        # print(data.pose.pose.position.x,data.pose.pose.position.y,data.pose.pose.orientation.z,data.pose.pose.orientation.w)
+        e = tf.transformations.euler_from_quaternion((data.pose.pose.orientation.x, data.pose.pose.orientation.y, data.pose.pose.orientation.z, data.pose.pose.orientation.w))
+        # print(e[2] / (2 * np.pi) * 360)
+        self.myDirect = e # rad
+
+    def AmclPoseCallback(self, data):
+        self.myPosX = data.pose.pose.position.x
+        self.myPosY = data.pose.pose.position.y
+        # print(self.myPosX, self.myPosY)
 
     def jointstateCallback(self, data):
         # Is moving?
