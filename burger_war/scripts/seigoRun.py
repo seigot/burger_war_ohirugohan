@@ -56,6 +56,10 @@ FIND_ENEMY_FOUND = 1
 FIND_ENEMY_WAIT = 2
 FIND_ENEMY_LOOKON = 3
 
+# SNIPE_MODE_KEEP_DISTANCE_FROM_ENEMY_THRESHOLD(m)
+DISTANCE_KEEP_TO_ENEMY_THRESHOLD = 1.5
+DISTANCE_KEEP_TO_ENEMY_THRESHOLD_WHEN_LOWWER_SCORE = 0.45
+
 class ActMode(Enum):
     SEARCH = 1
     SNIPE  = 2
@@ -72,6 +76,7 @@ class SeigoBot():
     lidarFig = plt.figure(figsize=(5,5))
     mapFig = plt.figure(figsize=(5,5))
     time_start = 0
+    f_Is_lowwer_score = False
     
     def __init__(self, bot_name):
         # bot name
@@ -101,6 +106,7 @@ class SeigoBot():
         self.red_angle = COLOR_TARGET_ANGLE_INIT_VAL # init
         self.blue_angle = COLOR_TARGET_ANGLE_INIT_VAL # init
         self.green_angle = COLOR_TARGET_ANGLE_INIT_VAL # init
+        self.red_distance = DISTANCE_TO_ENEMY_INIT_VAL # init
 
         # FIND_ENEMY status 
         self.find_enemy = FIND_ENEMY_SEARCH
@@ -264,7 +270,13 @@ class SeigoBot():
             # angle(rad)
             tmp_angle = ((rect[0]+rect[0]+rect[2])/2-(img_w/2)) *0.077
             self.red_angle = tmp_angle * np.pi / 180
-            # print ("red_angle", tmp_angle, self.red_angle )
+            # distance (m)
+            if rect[1] < len(eT.enemyTable):
+                self.red_distance = eT.enemyTable[rect[1]] if eT.enemyTable[rect[1]] > 0 else 1
+            else:
+                self.red_distance = 1
+                
+            # print ("red_angle", tmp_angle, self.red_angle, self.red_distance)
             # print ( tmp_angle )
             redFound = True
             self.trackEnemy(rect)
@@ -311,12 +323,16 @@ class SeigoBot():
         # print(state.data)
         dic = json.loads(state.data)
         tmp = int(dic["scores"]["r"])
-	if tmp > self.my_score and self.act_mode == ActMode.SNIPE and self.getElapsedTime() > 120 :
-            self.act_mode = ActMode.SEARCH
         self.my_score = tmp
         self.enemy_score = int(dic["scores"]["b"])
-
+        # update which bot is higher score
+        if self.my_score <= self.enemy_score:
+            self.f_Is_lowwer_score = True
+        else:
+            self.f_Is_lowwer_score = False
+            
         print("---")
+        print("f_Is_lowwer_score", self.f_Is_lowwer_score)
         print("my_sore", self.my_score)
         print("enemy_score", self.enemy_score)
         print("elapsed_time", self.getElapsedTime())
@@ -329,8 +345,9 @@ class SeigoBot():
         twist.angular.x = 0; twist.angular.y = 0; twist.angular.z = th
         return twist
 
-    def keepMarkerToCenter(self, color_type):
+    def keepMarkerToCenter(self, color_type, distance_threshold):
 
+        # keep center to enemy
         angle = COLOR_TARGET_ANGLE_INIT_VAL
 	if color_type == RED:
             angle = self.red_angle
@@ -344,9 +361,15 @@ class SeigoBot():
 
         if angle == COLOR_TARGET_ANGLE_INIT_VAL:
             return -1
-        
-        x = 0
-        th = angle * (-1) # rad
+
+        # keep distance to enemy when both red/green color found
+        if self.red_angle != COLOR_TARGET_ANGLE_INIT_VAL and self.green_angle != COLOR_TARGET_ANGLE_INIT_VAL:
+            _x = self.red_distance - distance_threshold
+        else:
+            _x = 0
+            
+        x = _x
+        th = angle * (-1) # rad/s
         twist = Twist()
         twist.linear.x = x; twist.linear.y = 0; twist.linear.z = 0
         twist.angular.x = 0; twist.angular.y = 0; twist.angular.z = th
@@ -551,11 +574,11 @@ class SeigoBot():
         self.setGoal(0, -1.2, PI/2)
         
         # keep sniping..
-        cnt = 0
         twist = self.getTwist(0, -1*3.1415/2)
         self.vel_pub.publish(twist)
         time.sleep(1.25)
 
+        cnt = 0
         rate=1500
         r = rospy.Rate(rate) # change speed fps
         while not rospy.is_shutdown():
@@ -565,11 +588,21 @@ class SeigoBot():
                 twist = self.getTwist(0, -1*3.1415/2)
             self.vel_pub.publish(twist)
             for i in range(rate):
-                ret = self.keepMarkerToCenter(RED)
+
+                # keep enemy marker (RED/GREEN) to center position
+                ret = self.keepMarkerToCenter(RED, DISTANCE_KEEP_TO_ENEMY_THRESHOLD)
                 if ret == -1:
-                    print("no color target found...")
+                    # if RED marker not found, keep GREEN color to center
+                    ret = self.keepMarkerToCenter(GREEN, None)
+                    #if ret == -1:
+                    #print("no color target found...")
                 r.sleep()
             cnt+=1
+
+ 	    #if self.getElapsedTime() > 120 and self.f_Is_lowwer_score == True:
+ 	    if self.getElapsedTime() > 60: # for Debug
+                self.act_mode = ActMode.MOVE
+                return
             
         #self.act_mode = ActMode.SEARCH # transition to ESCAPE
         #self.act_mode = ActMode.ESCAPE # transition to ESCAPE
@@ -588,7 +621,34 @@ class SeigoBot():
 
     def func_move(self):
         print("func_move")
-        # [TODO]
+
+        cnt = 0
+        rate=1500
+        r = rospy.Rate(rate) # change speed fps
+        while not rospy.is_shutdown():
+            # search 
+            if cnt%2 == 0:
+                twist = self.getTwist(0, 3.1415*2/3)
+            else: # if cnt%2 == 1:
+                twist = self.getTwist(0, -1*3.1415*2/3)
+            self.vel_pub.publish(twist)
+
+            # dog fight !!!
+            for i in range(rate):
+                # Is there something ahead?
+                if np.max(self.scan.ranges[0:5]) < 1.0 and np.max(self.scan.ranges[355:359]) < 1.0:
+                    distance_threshold = DISTANCE_KEEP_TO_ENEMY_THRESHOLD
+                else:
+                    distance_threshold = DISTANCE_KEEP_TO_ENEMY_THRESHOLD_WHEN_LOWWER_SCORE
+                # keep enemy marker (RED/GREEN) to center position
+                ret = self.keepMarkerToCenter(RED, distance_threshold)
+                if ret == -1:
+                    # if RED marker not found, keep GREEN color to center
+                    ret = self.keepMarkerToCenter(GREEN, None)
+                    
+                r.sleep()
+            cnt+=1
+
         return
 
     def strategy(self):
