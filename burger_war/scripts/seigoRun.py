@@ -80,10 +80,9 @@ class SeigoBot():
     
     def __init__(self, bot_name):
         # bot name
-        self.name = bot_name
-        # robot_name = rospy.get_param('~robot_name') # red_bot or blue_bot
-        # self.name = robot_name
-        # print(robot_name)
+        robot_name = rospy.get_param('~robot_name') # red_bot or blue_bot
+        self.name = robot_name
+        print("self.name", self.name)
         
         # velocity publisher
         self.vel_pub = rospy.Publisher('cmd_vel', Twist,queue_size=1)
@@ -680,8 +679,8 @@ class SeigoBot():
         # Main Loop <---
         
 if __name__ == '__main__':
-    #rospy.init_node('seigo_run')
-    rospy.init_node('red_bot')
-    bot = SeigoBot('red_bot')
+
+    rospy.init_node('bot_name')
+    bot = SeigoBot('bot_name')
     bot.strategy()
 
