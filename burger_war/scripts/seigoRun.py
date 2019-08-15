@@ -77,6 +77,7 @@ class SeigoBot():
     mapFig = plt.figure(figsize=(5,5))
     time_start = 0
     f_Is_lowwer_score = False
+    basic_mode_process_step = 0 # process step in each MODE
     
     def __init__(self, bot_name):
         # bot name
@@ -536,31 +537,34 @@ class SeigoBot():
     def func_basic(self):
         print("func_basic")
         twist = Twist()
-        
-        # 1: get 1st target
-        self.setGoal(-0.9, 0.5, 0)
+        self.basic_mode_process_step+=1
 
-        # 2: get 2nd target
-        self.setGoal(-0.9, -0.5, 0)
-
-        # 3: get 3rd target
-        self.setGoal(-0.8, 0.0, 0)
-        self.setGoal(-0.4, 0.0, 0)
-        # back
-        twist = self.getTwist(-0.4, 0)
-        self.vel_pub.publish(twist)
-        time.sleep(1.0)
-        
-        # 4.0: check witch direction the enemy exists.. [TODO]
-        
-        self.setGoal(0, -0.5, 0)
-        # turn around
-        twist = self.getTwist(0, PI/1.5)
-        self.vel_pub.publish(twist)
-        time.sleep(3.0)
-
-        self.act_mode = ActMode.SNIPE # transition to SNIPE
-
+        if self.basic_mode_process_step == 1:
+            # 1: get 1st target
+            self.setGoal(-0.9, 0.5, 0)
+        elif self.basic_mode_process_step == 2:
+            # 2: get 2nd target
+            self.setGoal(-0.9, -0.5, 0)
+        elif self.basic_mode_process_step == 3:
+            # 3: get 3rd target
+            self.setGoal(-0.8, 0.0, 0)
+        elif self.basic_mode_process_step == 4:            
+            self.setGoal(-0.4, 0.0, 0)
+            # back
+            twist = self.getTwist(-0.4, 0)
+            self.vel_pub.publish(twist)
+            time.sleep(1.0)
+        elif self.basic_mode_process_step == 5:
+            # check witch direction the enemy exists.. [TODO]    
+            self.setGoal(0, -0.5, 0)
+        elif self.basic_mode_process_step == 6:
+            # turn around
+            twist = self.getTwist(0, PI/1.5)
+            self.vel_pub.publish(twist)
+            time.sleep(3.0)
+        else:
+            self.act_mode = ActMode.SNIPE # transition to SNIPE
+           
     def func_snipe(self):
         print("func_snipe")
         twist = Twist()
@@ -611,6 +615,9 @@ class SeigoBot():
     def func_search(self):
         print("func_search")
         # [TODO]
+        # get nearrest position
+        # search 
+        
         return
     
     def func_escape(self):
@@ -655,10 +662,10 @@ class SeigoBot():
         target_turn = 0
         control_speed = 0
         control_turn = 0
-     
+        
         # Main Loop --->
         self.func_init()
-        r = rospy.Rate(1) # change speed fps
+        r = rospy.Rate(1500) # change speed fps
         while not rospy.is_shutdown():
             print("act_mode: ", self.act_mode)
 
