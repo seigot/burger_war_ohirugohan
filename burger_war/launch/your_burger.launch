@@ -8,13 +8,12 @@
 
     <!-- sample program node -->
 
-    <node pkg="burger_war" type="randomRun.py" name="randomRun" output="screen"/>
-
+    <node pkg="burger_war" type="seigoRun.py" name="seigoRun" output="screen">
+      <param name="robot_name" value="$(arg robot_name)" />
+    </node>
     <!-- END sample program node -->
 
-
-
-
+    
     <!-- End of your space  -->
 </launch>
 
