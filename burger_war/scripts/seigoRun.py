@@ -267,13 +267,14 @@ class SeigoBot():
         rects = self.find_rect_of_target_color(frame, RED)
         if len(rects) > 0:
             rect = max(rects, key=(lambda x: x[2] * x[3]))
-            cv2.rectangle(frame, tuple(rect[0:2]), tuple(rect[0:2] + rect[2:4]), (0, 0, 255), thickness=2)
-            # angle(rad)
-            tmp_angle = ((rect[0]+rect[0]+rect[2])/2-(img_w/2)) *0.077
-            self.red_angle = tmp_angle * np.pi / 180
-            # distance (m)
-            if rect[1] < len(eT.enemyTable):
-                self.red_distance = eT.enemyTable[rect[1]] if eT.enemyTable[rect[1]] > 0 else 1
+            if rect[3] > 10: # if red circle is enemy one (check if not noise)
+                cv2.rectangle(frame, tuple(rect[0:2]), tuple(rect[0:2] + rect[2:4]), (0, 0, 255), thickness=2)
+                # angle(rad)
+                tmp_angle = ((rect[0]+rect[0]+rect[2])/2-(img_w/2)) *0.077
+                self.red_angle = tmp_angle * np.pi / 180
+                # distance (m)
+                if rect[1] < len(eT.enemyTable):
+                    self.red_distance = eT.enemyTable[rect[1]] if eT.enemyTable[rect[1]] > 0 else 1
             else:
                 self.red_distance = 1
                 
