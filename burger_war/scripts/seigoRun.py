@@ -605,6 +605,7 @@ class SeigoBot():
             cnt+=1
 
  	    #if self.getElapsedTime() > 120 and self.f_Is_lowwer_score == True:
+            # [TODO] debug
  	    if self.getElapsedTime() > 60: # for Debug
                 self.act_mode = ActMode.ATTACK
                 return
@@ -616,10 +617,55 @@ class SeigoBot():
 
     def func_search(self):
         print("func_search")
-        # [TODO]
-        # get nearrest position
-        # search 
+
+        # [TODO] if red/green found, ATTACK mode
         
+        # init search process
+        if self.search_mode_process_step == 0:
+            # get nearrest position
+            self.setGoal(0, -0.5, PI/2) # nearrest
+            self.setGoal(0, -0.5, PI/4) # nearrest
+            self.search_mode_process_step+=1
+        else:
+            self.search_mode_process_step+=1
+
+        # search 
+        if self.search_mode_process_step == 1:
+            self.setGoal(0.5, 0, PI)
+        elif self.search_mode_process_step == 2:
+            self.setGoal(0.9, 0, PI)
+        elif self.search_mode_process_step == 3:
+            self.setGoal(0.9, -0.5, PI)
+        elif self.search_mode_process_step == 4:
+            self.setGoal(0.9, 0.5, PI)
+        elif self.search_mode_process_step == 5:
+            self.setGoal(0.9, 0, PI)
+        elif self.search_mode_process_step == 6:
+            self.setGoal(0, 0.5, -1*PI/2)
+        elif self.search_mode_process_step == 7:
+            self.setGoal(0, 0.5, 0)
+        elif self.search_mode_process_step == 8:
+            self.setGoal(0, 0.5, PI)
+        elif self.search_mode_process_step == 9:
+            self.setGoal(-0.5, 0, 0)
+        elif self.search_mode_process_step == 10:
+            self.setGoal(-0.9, 0, 0)
+        elif self.search_mode_process_step == 11:
+            self.setGoal(-0.9, 0.5, 0)
+        elif self.search_mode_process_step == 12:
+            self.setGoal(-0.9, -0.5, 0)
+        elif self.search_mode_process_step == 13:
+            self.setGoal(-0.9, 0, 0)
+        elif self.search_mode_process_step == 14:
+            self.setGoal(0, -0.5, PI/2)
+        elif self.search_mode_process_step == 15:
+            self.setGoal(0, -0.5, 0)
+        elif self.search_mode_process_step == 16:
+            self.setGoal(0, -0.5, PI)
+        elif self.search_mode_process_step == 17:
+            self.setGoal(0, -0.5, PI/4)
+        else:
+            self.search_mode_process_step = 0
         return
     
     def func_escape(self):
@@ -653,7 +699,11 @@ class SeigoBot():
                 if ret == -1:
                     # if RED marker not found, keep GREEN color to center
                     ret = self.keepMarkerToCenter(GREEN, None)
-                    
+                    if ret == -1:
+                        self.act_mode = ActMode.SEARCH
+                        self.search_mode_process_step = 0
+                        return
+
                 r.sleep()
             cnt+=1
 
