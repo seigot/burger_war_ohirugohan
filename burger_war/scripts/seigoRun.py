@@ -64,10 +64,10 @@ class ActMode(Enum):
     SEARCH = 1
     SNIPE  = 2
     ESCAPE = 3
-    MOVE   = 4
+    ATTACK = 4
     BASIC  = 5
 
-    # (start) BASIC --> SNIPE --> SEARCH or ESCAPE or MOVE --> (end)
+    # (start) BASIC --> SNIPE --> SEARCH or ESCAPE or ATTACK --> (end)
 
 class SeigoBot():
     myPosX = 0
@@ -77,7 +77,8 @@ class SeigoBot():
     mapFig = plt.figure(figsize=(5,5))
     time_start = 0
     f_Is_lowwer_score = False
-    basic_mode_process_step = 0 # process step in each MODE
+    basic_mode_process_step = 0 # process step in basic MODE
+    search_mode_process_step = 0 # process step in search MODE
     
     def __init__(self, bot_name):
         # bot name
@@ -604,12 +605,12 @@ class SeigoBot():
 
  	    #if self.getElapsedTime() > 120 and self.f_Is_lowwer_score == True:
  	    if self.getElapsedTime() > 60: # for Debug
-                self.act_mode = ActMode.MOVE
+                self.act_mode = ActMode.ATTACK
                 return
             
         #self.act_mode = ActMode.SEARCH # transition to ESCAPE
         #self.act_mode = ActMode.ESCAPE # transition to ESCAPE
-        #self.act_mode = ActMode.MOVE # transition to MOVE
+        #self.act_mode = ActMode.ATTACK # transition to ATTACK
         return
 
     def func_search(self):
@@ -625,8 +626,8 @@ class SeigoBot():
         # [TODO]
         return
 
-    def func_move(self):
-        print("func_move")
+    def func_attack(self):
+        print("func_attack")
 
         cnt = 0
         rate=1500
@@ -677,8 +678,8 @@ class SeigoBot():
                 self.func_search()
             elif self.act_mode == ActMode.ESCAPE: # ESCAPE
                 self.func_escape()
-            elif self.act_mode == ActMode.MOVE:   # MOVE
-                self.func_move()
+            elif self.act_mode == ActMode.ATTACK: # ATTACK
+                self.func_attack()
             else:
                 print("act_mode: ", self.act_mode)
                 
