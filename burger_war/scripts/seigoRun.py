@@ -60,6 +60,28 @@ FIND_ENEMY_LOOKON = 3
 DISTANCE_KEEP_TO_ENEMY_THRESHOLD = 1.5
 DISTANCE_KEEP_TO_ENEMY_THRESHOLD_WHEN_LOWWER_SCORE = 0.45
 
+# robot running coordinate in SEARCH MODE
+coordinate = np.array([
+        # x, y, th
+        [0.5, 0, PI],
+        [0.9, 0, PI],
+        [0.9, -0.5, PI],
+        [0.9, 0.5, PI],
+        [0.9, 0, PI],
+        [0, 0.5, -1*PI/2],
+        [0, 0.5, 0],
+        [0, 0.5, PI],
+        [-0.5, 0, 0],
+        [-0.9, 0, 0],
+        [-0.9, 0.5, 0],
+        [-0.9, -0.5, 0],
+        [-0.9, 0, 0],
+        [0, -0.5, PI/2],
+        [0, -0.5, 0],
+        [0, -0.5, PI],
+        [0, -0.5, PI/4]
+])
+
 class ActMode(Enum):
     SEARCH = 1
     SNIPE  = 2
@@ -78,7 +100,7 @@ class SeigoBot():
     time_start = 0
     f_Is_lowwer_score = False
     basic_mode_process_step = 0 # process step in basic MODE
-    search_mode_process_step = 0 # process step in search MODE
+    search_mode_process_step_idx = -1 # process step in search MODE
     
     def __init__(self, bot_name):
         # bot name
@@ -515,7 +537,15 @@ class SeigoBot():
         twist.linear.x = x; twist.linear.y = 0; twist.linear.z = 0
         twist.angular.x = 0; twist.angular.y = 0; twist.angular.z = th        
         return twist
-    
+
+    def func_search_neighbourhood(self, p0, ps):
+        L = np.array([])
+        for i in range(ps.shape[0]):
+            norm = np.sqrt( (ps[i][0] - p0[0])*(ps[i][0] - p0[0]) +
+                            (ps[i][1] - p0[1])*(ps[i][1] - p0[1]) )
+            L = np.append(L, norm)
+        return np.argmin(L) ,ps[np.argmin(L)]
+
     def func_init(self):
         print("func_init")
         twist = Twist()
@@ -619,53 +649,26 @@ class SeigoBot():
         print("func_search")
 
         # [TODO] if red/green found, ATTACK mode
-        
+
         # init search process
-        if self.search_mode_process_step == 0:
+        if self.search_mode_process_step_idx == -1:
             # get nearrest position
-            self.setGoal(0, -0.5, PI/2) # nearrest
-            self.setGoal(0, -0.5, PI/4) # nearrest
-            self.search_mode_process_step+=1
+            current_coor = np.array([self.myPosX, self.myPosY])
+            idx, nearrest_coor = self.func_search_neighbourhood(current_coor, coordinate)
+            print( idx, nearrest_coor[0], nearrest_coor[1], nearrest_coor[2] ) # idx, (x, y, th)
+            self.search_mode_process_step_idx = idx
         else:
-            self.search_mode_process_step+=1
+            self.search_mode_process_step_idx += 1
+            if self.search_mode_process_step_idx >= len(coordinate):
+                self.search_mode_process_step_idx = 0
 
         # search 
-        if self.search_mode_process_step == 1:
-            self.setGoal(0.5, 0, PI)
-        elif self.search_mode_process_step == 2:
-            self.setGoal(0.9, 0, PI)
-        elif self.search_mode_process_step == 3:
-            self.setGoal(0.9, -0.5, PI)
-        elif self.search_mode_process_step == 4:
-            self.setGoal(0.9, 0.5, PI)
-        elif self.search_mode_process_step == 5:
-            self.setGoal(0.9, 0, PI)
-        elif self.search_mode_process_step == 6:
-            self.setGoal(0, 0.5, -1*PI/2)
-        elif self.search_mode_process_step == 7:
-            self.setGoal(0, 0.5, 0)
-        elif self.search_mode_process_step == 8:
-            self.setGoal(0, 0.5, PI)
-        elif self.search_mode_process_step == 9:
-            self.setGoal(-0.5, 0, 0)
-        elif self.search_mode_process_step == 10:
-            self.setGoal(-0.9, 0, 0)
-        elif self.search_mode_process_step == 11:
-            self.setGoal(-0.9, 0.5, 0)
-        elif self.search_mode_process_step == 12:
-            self.setGoal(-0.9, -0.5, 0)
-        elif self.search_mode_process_step == 13:
-            self.setGoal(-0.9, 0, 0)
-        elif self.search_mode_process_step == 14:
-            self.setGoal(0, -0.5, PI/2)
-        elif self.search_mode_process_step == 15:
-            self.setGoal(0, -0.5, 0)
-        elif self.search_mode_process_step == 16:
-            self.setGoal(0, -0.5, PI)
-        elif self.search_mode_process_step == 17:
-            self.setGoal(0, -0.5, PI/4)
-        else:
-            self.search_mode_process_step = 0
+        NextGoal_coor = coordinate[ self.search_mode_process_step_idx ]
+        _x = NextGoal_coor[0]
+        _y = NextGoal_coor[1]
+        _th = NextGoal_coor[2]
+        self.setGoal(_x, _y, _th)
+
         return
     
     def func_escape(self):
@@ -701,7 +704,7 @@ class SeigoBot():
                     ret = self.keepMarkerToCenter(GREEN, None)
                     if ret == -1:
                         self.act_mode = ActMode.SEARCH
-                        self.search_mode_process_step = 0
+                        self.search_mode_process_step_idx = -1
                         return
 
                 r.sleep()
