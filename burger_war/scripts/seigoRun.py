@@ -732,7 +732,7 @@ class SeigoBot():
             # dog fight !!!
             for i in range(rate):
                 # Is there something ahead?
-                if np.max(self.scan.ranges[0:5]) < 1.0 and np.max(self.scan.ranges[355:359]) < 1.0:
+                if np.max(self.scan.ranges[0:5]) < 0.4 and np.max(self.scan.ranges[355:359]) < 0.4:
                     distance_threshold = DISTANCE_KEEP_TO_ENEMY_THRESHOLD
                 else:
                     distance_threshold = DISTANCE_KEEP_TO_ENEMY_THRESHOLD_WHEN_LOWWER_SCORE
