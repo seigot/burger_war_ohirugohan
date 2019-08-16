@@ -61,7 +61,7 @@ DISTANCE_KEEP_TO_ENEMY_THRESHOLD = 1.5
 DISTANCE_KEEP_TO_ENEMY_THRESHOLD_WHEN_LOWWER_SCORE = 0.45
 
 # robot running coordinate in SEARCH MODE
-coordinate = np.array([
+search_coordinate = np.array([
         # x, y, th
         [0.5, 0, PI],
         [0.9, 0, PI],
@@ -82,6 +82,20 @@ coordinate = np.array([
         [0, -0.5, PI/4]
 ])
 
+# robot running coordinate in SEARCH MODE
+basic_coordinate = np.array([
+    # x, y, th
+    [-0.9, 0.5, 0],
+    [-0.9, -0.5, 0],
+    [-0.9, 0.0, 0],
+    [-0.4, 0.0, 0],
+    [-0.9, 0.0, 0],
+    [0, -0.5, 0],
+    [0, -0.5, PI],
+    [0, -0.5, PI/2],
+    [0, -1.2, PI/2]]
+)
+
 class ActMode(Enum):
     SEARCH = 1
     SNIPE  = 2
@@ -99,7 +113,8 @@ class SeigoBot():
     mapFig = plt.figure(figsize=(5,5))
     time_start = 0
     f_Is_lowwer_score = False
-    basic_mode_process_step = 0 # process step in basic MODE
+    f_Is_cancel_published = False
+    basic_mode_process_step_idx = 0 # process step in basic MODE
     search_mode_process_step_idx = -1 # process step in search MODE
     
     def __init__(self, bot_name):
@@ -222,7 +237,14 @@ class SeigoBot():
             rospy.logerr("Action server not available!")
             rospy.signal_shutdown("Action server not available!")
         else:
-            return self.client.get_result()
+            get_result = self.client.get_result()
+            print("wait", wait, "get_result", get_result)
+
+        if self.f_Is_cancel_published == True:
+            self.f_Is_cancel_published = False
+            return -1
+
+        return 0
 
     # lidar scan topic call back sample
     # update lidar scan state
@@ -569,45 +591,31 @@ class SeigoBot():
     def func_basic(self):
         print("func_basic")
         twist = Twist()
-        self.basic_mode_process_step+=1
 
-        if self.basic_mode_process_step == 1:
-            # 1: get 1st target
-            self.setGoal(-0.9, 0.5, 0)
-        elif self.basic_mode_process_step == 2:
-            # 2: get 2nd target
-            self.setGoal(-0.9, -0.5, 0)
-        elif self.basic_mode_process_step == 3:
-            # 3: get 3rd target
-            self.setGoal(-0.8, 0.0, 0)
-        elif self.basic_mode_process_step == 4:            
-            self.setGoal(-0.4, 0.0, 0)
-            # back
-            twist = self.getTwist(-0.4, 0)
-            self.vel_pub.publish(twist)
-            time.sleep(1.0)
-        elif self.basic_mode_process_step == 5:
-            # check witch direction the enemy exists.. [TODO]    
-            self.setGoal(0, -0.5, 0)
-        elif self.basic_mode_process_step == 6:
-            # turn around
-            twist = self.getTwist(0, PI/1.5)
-            self.vel_pub.publish(twist)
-            time.sleep(3.0)
-        else:
+        # init search process
+        if self.basic_mode_process_step_idx < 0: # -1
+            return -1
+        elif self.basic_mode_process_step_idx >= len(basic_coordinate):
             self.act_mode = ActMode.SNIPE # transition to SNIPE
-           
+            return 0
+
+        # basic
+        NextGoal_coor = basic_coordinate[ self.basic_mode_process_step_idx ]
+        _x = NextGoal_coor[0]
+        _y = NextGoal_coor[1]
+        _th = NextGoal_coor[2]
+        ret = self.setGoal(_x, _y, _th)
+        if ret == 0:
+            self.basic_mode_process_step_idx += 1
+        else:
+            print("setGoal ret:", ret)
+
+        return 0
+
     def func_snipe(self):
         print("func_snipe")
         twist = Twist()
-        
-        # 1: go to snipe position
-        self.setGoal(0, -0.5, PI/2)
-        twist = self.getTwist(-0.4, 0)
-        self.vel_pub.publish(twist)
-        time.sleep(2.0)
-        self.setGoal(0, -1.2, PI/2)
-        
+
         # keep sniping..
         twist = self.getTwist(0, -1*3.1415/2)
         self.vel_pub.publish(twist)
@@ -651,25 +659,27 @@ class SeigoBot():
         # [TODO] if red/green found, ATTACK mode
 
         # init search process
-        if self.search_mode_process_step_idx == -1:
+        if self.search_mode_process_step_idx < 0: # -1
             # get nearrest position
             current_coor = np.array([self.myPosX, self.myPosY])
-            idx, nearrest_coor = self.func_search_neighbourhood(current_coor, coordinate)
+            idx, nearrest_coor = self.func_search_neighbourhood(current_coor, search_coordinate)
             print( idx, nearrest_coor[0], nearrest_coor[1], nearrest_coor[2] ) # idx, (x, y, th)
             self.search_mode_process_step_idx = idx
-        else:
-            self.search_mode_process_step_idx += 1
-            if self.search_mode_process_step_idx >= len(coordinate):
-                self.search_mode_process_step_idx = 0
+        elif self.search_mode_process_step_idx >= len(search_coordinate):
+            self.search_mode_process_step_idx = 0
 
         # search 
-        NextGoal_coor = coordinate[ self.search_mode_process_step_idx ]
+        NextGoal_coor = search_coordinate[ self.search_mode_process_step_idx ]
         _x = NextGoal_coor[0]
         _y = NextGoal_coor[1]
         _th = NextGoal_coor[2]
-        self.setGoal(_x, _y, _th)
+        ret = self.setGoal(_x, _y, _th)
+        if ret == 0:
+            self.search_mode_process_step_idx += 1
+        else:
+            print("setGoal ret:", ret)
 
-        return
+        return 0
     
     def func_escape(self):
         print("func_escape")        
