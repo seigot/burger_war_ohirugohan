@@ -113,7 +113,6 @@ class SeigoBot():
     mapFig = plt.figure(figsize=(5,5))
     time_start = 0
     f_Is_lowwer_score = False
-    f_Is_cancel_published = False
     basic_mode_process_step_idx = 0 # process step in basic MODE
     search_mode_process_step_idx = -1 # process step in search MODE
     
@@ -236,12 +235,11 @@ class SeigoBot():
         if not wait:
             rospy.logerr("Action server not available!")
             rospy.signal_shutdown("Action server not available!")
-        else:
-            get_result = self.client.get_result()
-            print("wait", wait, "get_result", get_result)
+            return -1
 
-        if self.f_Is_cancel_published == True:
-            self.f_Is_cancel_published = False
+        get_state = self.client.get_state()
+        print("wait", wait, "get_state", get_state)
+        if get_state == 2:  # if send_goal is canceled
             return -1
 
         return 0
