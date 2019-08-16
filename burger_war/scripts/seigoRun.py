@@ -244,6 +244,9 @@ class SeigoBot():
 
         return 0
 
+    def cancelGoal(self):
+        self.client.cancel_goal()
+
     # lidar scan topic call back sample
     # update lidar scan state
     def lidarCallback(self, data):
@@ -357,6 +360,10 @@ class SeigoBot():
             # print ("blue_angle", tmp_angle, self.blue_angle )
         else:
             self.blue_angle = COLOR_TARGET_ANGLE_INIT_VAL
+
+        # either red/green color found, publish cancel topic
+        if self.red_angle != COLOR_TARGET_ANGLE_INIT_VAL or self.green_angle != COLOR_TARGET_ANGLE_INIT_VAL:
+            self.cancelGoal()
 
         #    if self.camera_preview:
         # print("image show")
@@ -597,6 +604,11 @@ class SeigoBot():
             self.act_mode = ActMode.SNIPE # transition to SNIPE
             return 0
 
+        # if red/green found, SNIPE mode
+        if self.red_angle != COLOR_TARGET_ANGLE_INIT_VAL and self.green_angle != COLOR_TARGET_ANGLE_INIT_VAL:
+            self.act_mode = ActMode.SNIPE # transition to SNIPE
+            return 0
+        
         # basic
         NextGoal_coor = basic_coordinate[ self.basic_mode_process_step_idx ]
         _x = NextGoal_coor[0]
@@ -615,15 +627,13 @@ class SeigoBot():
         twist = Twist()
 
         # keep sniping..
-        twist = self.getTwist(0, -1*3.1415/2)
-        self.vel_pub.publish(twist)
-        time.sleep(1.25)
-
         cnt = 0
         rate=1500
         r = rospy.Rate(rate) # change speed fps
         while not rospy.is_shutdown():
-            if cnt%2 == 0:
+            if cnt == 0:
+                twist = self.getTwist(0, -1*3.1415/3)               
+            elif cnt%2 == 0:
                 twist = self.getTwist(0, 3.1415/2)
             else: # if cnt%2 == 1:
                 twist = self.getTwist(0, -1*3.1415/2)
@@ -645,8 +655,11 @@ class SeigoBot():
  	    if self.getElapsedTime() > 60: # for Debug
                 self.act_mode = ActMode.ATTACK
                 return
+            elif self.basic_mode_process_step_idx < len(basic_coordinate):
+                self.act_mode = ActMode.SNIPE # transition to SNIPE
+                return
             
-        #self.act_mode = ActMode.SEARCH # transition to ESCAPE
+        #self.act_mode = ActMode.SEARCH # transition to SEARCH
         #self.act_mode = ActMode.ESCAPE # transition to ESCAPE
         #self.act_mode = ActMode.ATTACK # transition to ATTACK
         return
@@ -654,7 +667,10 @@ class SeigoBot():
     def func_search(self):
         print("func_search")
 
-        # [TODO] if red/green found, ATTACK mode
+        # if red/green found, SNIPE mode
+        if self.red_angle != COLOR_TARGET_ANGLE_INIT_VAL and self.green_angle != COLOR_TARGET_ANGLE_INIT_VAL:
+            self.act_mode = ActMode.SNIPE
+            return 0
 
         # init search process
         if self.search_mode_process_step_idx < 0: # -1
@@ -711,6 +727,7 @@ class SeigoBot():
                     # if RED marker not found, keep GREEN color to center
                     ret = self.keepMarkerToCenter(GREEN, None)
                     if ret == -1:
+                        # if lost enemy, transition to SEARCH mode
                         self.act_mode = ActMode.SEARCH
                         self.search_mode_process_step_idx = -1
                         return
