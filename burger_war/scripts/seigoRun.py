@@ -373,9 +373,14 @@ class SeigoBot():
     def stateCallback(self, state):
         # print(state.data)
         dic = json.loads(state.data)
-        tmp = int(dic["scores"]["r"])
-        self.my_score = tmp
-        self.enemy_score = int(dic["scores"]["b"])
+
+        if self.name == "red_bot": # red_bot
+            self.my_score = int(dic["scores"]["r"])
+            self.enemy_score = int(dic["scores"]["b"])
+        else: # blue_bot
+            self.my_score = int(dic["scores"]["b"])
+            self.enemy_score = int(dic["scores"]["r"])
+
         # update which bot is higher score
         if self.my_score <= self.enemy_score:
             self.f_Is_lowwer_score = True
