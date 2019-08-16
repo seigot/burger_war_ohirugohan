@@ -618,6 +618,7 @@ class SeigoBot():
         if ret == 0:
             self.basic_mode_process_step_idx += 1
         else:
+            # setGoal canceled
             print("setGoal ret:", ret)
 
         return 0
@@ -631,12 +632,13 @@ class SeigoBot():
         rate=1500
         r = rospy.Rate(rate) # change speed fps
         while not rospy.is_shutdown():
-            if cnt == 0:
-                twist = self.getTwist(0, -1*3.1415/3)               
-            elif cnt%2 == 0:
-                twist = self.getTwist(0, 3.1415/2)
+            if cnt%2 == 0:
+                if cnt == 0:
+                    twist = self.getTwist(0, -1*3.1415/3)
+                else:
+                    twist = self.getTwist(0, -1*3.1415/2)
             else: # if cnt%2 == 1:
-                twist = self.getTwist(0, -1*3.1415/2)
+                twist = self.getTwist(0, 3.1415/2)
             self.vel_pub.publish(twist)
             for i in range(rate):
 
@@ -645,19 +647,26 @@ class SeigoBot():
                 if ret == -1:
                     # if RED marker not found, keep GREEN color to center
                     ret = self.keepMarkerToCenter(GREEN, None)
-                    #if ret == -1:
-                    #print("no color target found...")
+                    if ret == -1:
+                        pass # print("no color target found...")
+
                 r.sleep()
             cnt+=1
 
  	    #if self.getElapsedTime() > 120 and self.f_Is_lowwer_score == True:
             # [TODO] debug
- 	    if self.getElapsedTime() > 60: # for Debug
-                self.act_mode = ActMode.ATTACK
+ 	    if self.getElapsedTime() > 60 and self.f_Is_lowwer_score == True and self.find_enemy != FIND_ENEMY_SEARCH:
+                self.act_mode = ActMode.ATTACK # transition to ATTACK
+                return
+ 	    elif self.getElapsedTime() > 60 and self.f_Is_lowwer_score == True and self.find_enemy == FIND_ENEMY_SEARCH:
+                self.act_mode = ActMode.SEARCH # transition to SEARCH
+                self.search_mode_process_step_idx = -1
                 return
             elif self.basic_mode_process_step_idx < len(basic_coordinate):
-                self.act_mode = ActMode.SNIPE # transition to SNIPE
+                self.act_mode = ActMode.BASIC  # transition to BASIC
                 return
+            else:
+                pass # keep SNIPE mode
             
         #self.act_mode = ActMode.SEARCH # transition to SEARCH
         #self.act_mode = ActMode.ESCAPE # transition to ESCAPE
@@ -691,6 +700,7 @@ class SeigoBot():
         if ret == 0:
             self.search_mode_process_step_idx += 1
         else:
+            # setGoal canceled
             print("setGoal ret:", ret)
 
         return 0
