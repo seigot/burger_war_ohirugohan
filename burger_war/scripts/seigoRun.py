@@ -55,9 +55,12 @@ FIND_ENEMY_FOUND = 1
 FIND_ENEMY_WAIT = 2
 FIND_ENEMY_LOOKON = 3
 
-# SNIPE_MODE_KEEP_DISTANCE_FROM_ENEMY_THRESHOLD(m)
+# threshold
 DISTANCE_KEEP_TO_ENEMY_THRESHOLD = 1.5
 DISTANCE_KEEP_TO_ENEMY_THRESHOLD_WHEN_LOWWER_SCORE = 0.45
+DISTANCE_TO_WALL_THRESHOLD = 0.1
+ELAPSED_TIME_TO_TRANSITION_THRESHOLD = 60 # (s)
+F_IS_LOWWER_SCORE_THRESHOLD = 0
 
 # robot running coordinate in SEARCH MODE
 search_coordinate = np.array([
@@ -565,7 +568,7 @@ class SeigoBot():
             self.enemy_score = int(dic["scores"]["r"])
 
         # update which bot is higher score
-        if self.my_score <= self.enemy_score:
+        if self.my_score <= ( self.enemy_score + F_IS_LOWWER_SCORE_THRESHOLD ):
             self.f_Is_lowwer_score = True
         else:
             self.f_Is_lowwer_score = False
@@ -793,9 +796,9 @@ class SeigoBot():
             return 0
 
         # check front/back
-        if self.front_scan <= 0.1:
+        if self.front_scan <= DISTANCE_TO_WALL_THRESHOLD:
             print("front_scan", front_scan)
-        elif self.back_scan <= 0.1:
+        elif self.back_scan <= DISTANCE_TO_WALL_THRESHOLD:
             print("back_scan", back_scan)
 
         # if red/green found, SNIPE mode
@@ -837,9 +840,9 @@ class SeigoBot():
             for i in range(rate):
 
                 # check front/back
-                if self.front_scan <= 0.1:
+                if self.front_scan <= DISTANCE_TO_WALL_THRESHOLD:
                     print("front_scan", front_scan)
-                elif self.back_scan <= 0.1:
+                elif self.back_scan <= DISTANCE_TO_WALL_THRESHOLD:
                     print("back_scan", back_scan)
 
                 # keep enemy marker (RED/GREEN) to center position
@@ -855,10 +858,10 @@ class SeigoBot():
 
  	    #if self.getElapsedTime() > 120 and self.f_Is_lowwer_score == True:
             # [TODO] debug
- 	    if self.getElapsedTime() > 60 and self.f_Is_lowwer_score == True and self.find_enemy != FIND_ENEMY_SEARCH:
+ 	    if self.getElapsedTime() > ELAPSED_TIME_TO_TRANSITION_THRESHOLD and self.f_Is_lowwer_score == True and self.find_enemy != FIND_ENEMY_SEARCH:
                 self.act_mode = ActMode.ATTACK # transition to ATTACK
                 return
- 	    elif self.getElapsedTime() > 60 and self.f_Is_lowwer_score == True and self.find_enemy == FIND_ENEMY_SEARCH:
+ 	    elif self.getElapsedTime() > ELAPSED_TIME_TO_TRANSITION_THRESHOLD and self.f_Is_lowwer_score == True and self.find_enemy == FIND_ENEMY_SEARCH:
                 self.act_mode = ActMode.SEARCH # transition to SEARCH
                 self.search_mode_process_step_idx = -1
                 return
@@ -882,9 +885,9 @@ class SeigoBot():
             return 0
 
         # check front/back
-        if self.front_scan <= 0.1:
+        if self.front_scan <= DISTANCE_TO_WALL_THRESHOLD:
             print("front_scan", front_scan)
-        elif self.back_scan <= 0.1:
+        elif self.back_scan <= DISTANCE_TO_WALL_THRESHOLD:
             print("back_scan", back_scan)
 
         # init search process
@@ -934,9 +937,9 @@ class SeigoBot():
             for i in range(rate):
 
                 # check front/back
-                if self.front_scan <= 0.1:
+                if self.front_scan <= DISTANCE_TO_WALL_THRESHOLD:
                     print("front_scan", front_scan)
-                elif self.back_scan <= 0.1:
+                elif self.back_scan <= DISTANCE_TO_WALL_THRESHOLD:
                     print("back_scan", back_scan)
 
                 # Is there something ahead?
