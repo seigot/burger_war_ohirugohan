@@ -82,7 +82,7 @@ search_coordinate = np.array([
     [0, -0.5, PI/4]
 ])
 
-# robot running coordinate in SEARCH MODE
+# robot running coordinate in BASIC MODE
 basic_coordinate = np.array([
     # x, y, th
     [-0.4, 0.0, 0],  # 1
@@ -312,7 +312,9 @@ class SeigoBot():
         self.lidar_sub = rospy.Subscriber(topicname_scan, LaserScan, self.lidarCallback)
         self.front_distance = DISTANCE_TO_ENEMY_INIT_VAL # init
         self.front_scan = DISTANCE_TO_ENEMY_INIT_VAL
- 
+        self.back_distance = DISTANCE_TO_ENEMY_INIT_VAL # init
+        self.back_scan = DISTANCE_TO_ENEMY_INIT_VAL
+
         # usb camera
         self.img = None
         self.camera_preview = True
@@ -442,6 +444,8 @@ class SeigoBot():
         # self.front_distance = self.scan.ranges[0]
         self.front_distance = min(min(self.scan.ranges[0:10]),min(self.scan.ranges[350:359]))
         self.front_scan = (sum(self.scan.ranges[0:4])+sum(self.scan.ranges[355:359])) / 10
+        self.back_distance = (min(self.scan.ranges[170:190]))
+        self.back_scan = (sum(self.scan.ranges[176:185])) / 10
 
     def find_rect_of_target_color(self, image, color_type): # r:0, g:1, b:2
         hsv = cv2.cvtColor(image, cv2.COLOR_BGR2HSV_FULL)
@@ -476,7 +480,7 @@ class SeigoBot():
         return rects
         
     # camera image call back sample
-    # comvert image topic to opencv object and show
+    # convert image topic to opencv object and show
     def imageCallback(self, data):
         redFound = False
         greenFound = False
@@ -788,6 +792,12 @@ class SeigoBot():
             self.act_mode = ActMode.SNIPE # transition to SNIPE
             return 0
 
+        # check front/back
+        if self.front_scan <= 0.1:
+            print("front_scan", front_scan)
+        elif self.back_scan <= 0.1:
+            print("back_scan", back_scan)
+
         # if red/green found, SNIPE mode
         if self.red_angle != COLOR_TARGET_ANGLE_INIT_VAL and self.green_angle != COLOR_TARGET_ANGLE_INIT_VAL:
             self.act_mode = ActMode.SNIPE # transition to SNIPE
@@ -825,6 +835,12 @@ class SeigoBot():
                 twist = self.getTwist(0, 3.1415/2)
             self.vel_pub.publish(twist)
             for i in range(rate):
+
+                # check front/back
+                if self.front_scan <= 0.1:
+                    print("front_scan", front_scan)
+                elif self.back_scan <= 0.1:
+                    print("back_scan", back_scan)
 
                 # keep enemy marker (RED/GREEN) to center position
                 ret = self.keepMarkerToCenter(RED, DISTANCE_KEEP_TO_ENEMY_THRESHOLD)
@@ -864,6 +880,12 @@ class SeigoBot():
         if self.red_angle != COLOR_TARGET_ANGLE_INIT_VAL and self.green_angle != COLOR_TARGET_ANGLE_INIT_VAL:
             self.act_mode = ActMode.SNIPE
             return 0
+
+        # check front/back
+        if self.front_scan <= 0.1:
+            print("front_scan", front_scan)
+        elif self.back_scan <= 0.1:
+            print("back_scan", back_scan)
 
         # init search process
         if self.search_mode_process_step_idx < 0: # -1
@@ -910,6 +932,13 @@ class SeigoBot():
 
             # dog fight !!!
             for i in range(rate):
+
+                # check front/back
+                if self.front_scan <= 0.1:
+                    print("front_scan", front_scan)
+                elif self.back_scan <= 0.1:
+                    print("back_scan", back_scan)
+
                 # Is there something ahead?
                 if np.max(self.scan.ranges[0:5]) < 0.4 and np.max(self.scan.ranges[355:359]) < 0.4:
                     distance_threshold = DISTANCE_KEEP_TO_ENEMY_THRESHOLD
