@@ -611,7 +611,7 @@ class SeigoBot():
             _x = 0
             
         x = _x
-        th = angle * (-1) # rad/s
+        th = 3 * angle * (-1) # rad/s
         twist = Twist()
         twist.linear.x = x; twist.linear.y = 0; twist.linear.z = 0
         twist.angular.x = 0; twist.angular.y = 0; twist.angular.z = th
