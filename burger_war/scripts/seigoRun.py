@@ -472,6 +472,21 @@ class SeigoBot():
             upper_green = np.array([110, 255, 255])
             mask = cv2.inRange(hsv, lower_green, upper_green)
 
+        # neiborhood for dilate/erode
+        neiborhood = np.array([[0, 1, 0],
+                               [1, 1, 1],
+                               [0, 1, 0]],
+                              np.uint8)
+        # dilate
+        mask = cv2.dilate(mask,
+                          neiborhood,
+                          iterations=2)
+
+        # erode
+        mask = cv2.erode(mask,
+                         neiborhood,
+                         iterations=2)
+
         # get contours
         img, contours, _ = cv2.findContours(mask, cv2.RETR_TREE, cv2.CHAIN_APPROX_SIMPLE)
         #contours = cv2.findContours(mask, cv2.RETR_TREE, cv2.CHAIN_APPROX_SIMPLE)
@@ -520,15 +535,16 @@ class SeigoBot():
         rects = self.find_rect_of_target_color(frame, GREEN)
         if len(rects) > 0:
             rect = max(rects, key=(lambda x: x[2] * x[3]))
-            cv2.rectangle(frame, tuple(rect[0:2]), tuple(rect[0:2] + rect[2:4]), (0, 0, 255), thickness=2)
-            # angle(rad)
-            tmp_angle = ((rect[0]+rect[0]+rect[2])/2-(img_w/2)) *0.077
-            self.green_angle = tmp_angle * np.pi / 180
-            # print ("green_angle", tmp_angle, self.green_angle )
-            # print ( tmp_angle )
-            if  redFound is False:
-                greenFound = True
-                self.trackEnemy(rect)
+            if rect[3] > 10:
+                cv2.rectangle(frame, tuple(rect[0:2]), tuple(rect[0:2] + rect[2:4]), (0, 0, 255), thickness=2)
+                # angle(rad)
+                tmp_angle = ((rect[0]+rect[0]+rect[2])/2-(img_w/2)) *0.077
+                self.green_angle = tmp_angle * np.pi / 180
+                # print ("green_angle", tmp_angle, self.green_angle )
+                # print ( tmp_angle )
+                if  redFound is False:
+                    greenFound = True
+                    self.trackEnemy(rect)
         else:
             self.green_angle = COLOR_TARGET_ANGLE_INIT_VAL
 
