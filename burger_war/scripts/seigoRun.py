@@ -295,6 +295,8 @@ class SeigoBot():
     mapFig = plt.figure(figsize=(5,5))
     time_start = 0
     f_Is_lowwer_score = False
+    f_isFrontBumperHit = False
+    f_isRearBumperHit = False
     basic_mode_process_step_idx = 0 # process step in basic MODE
     search_mode_process_step_idx = -1 # process step in search MODE
     
@@ -449,6 +451,19 @@ class SeigoBot():
         self.front_scan = (sum(self.scan.ranges[0:4])+sum(self.scan.ranges[355:359])) / 10
         self.back_distance = (min(self.scan.ranges[170:190]))
         self.back_scan = (sum(self.scan.ranges[176:185])) / 10
+
+        # RESPECT @koy_tak        
+        if self.scan.ranges[0] < 0.05 or self.scan.ranges[10] < 0.05 or self.scan.ranges[350] < 0.05:
+            self.f_isFrontBumperHit = True
+            self.cancelGoal()
+        else:
+            self.f_isFrontBumperHit = False
+
+        if self.scan.ranges[180] < 0.02 or self.scan.ranges[170] < 0.02 or self.scan.ranges[190] < 0.02:
+            self.f_isRearBumperHit = True
+            self.cancelGoal()
+        else:
+            self.f_isRearBumperHit = False
 
     def find_rect_of_target_color(self, image, color_type): # r:0, g:1, b:2
         hsv = cv2.cvtColor(image, cv2.COLOR_BGR2HSV_FULL)
@@ -764,6 +779,10 @@ class SeigoBot():
         y = -x - fieldHeight
         ax.plot(x, y, "r-")
 
+    def Public_Twist_When_Bumper_Hit(self, _x, _th):
+        twist = self.getTwist(_x, _th)
+        self.vel_pub.publish(twist)
+
     def getTwist(self, _x, _th):
         twist = Twist()
         x = _x
@@ -812,10 +831,9 @@ class SeigoBot():
             return 0
 
         # check front/back
-        if self.front_scan <= DISTANCE_TO_WALL_THRESHOLD:
-            print("front_scan", front_scan)
-        elif self.back_scan <= DISTANCE_TO_WALL_THRESHOLD:
-            print("back_scan", back_scan)
+        if self.f_isFrontBumperHit == True:
+            print("f_isFrontBumperHit")
+            self.Public_Twist_When_Bumper_Hit(-0.2, 0)
 
         # if red/green found, SNIPE mode
         if self.red_angle != COLOR_TARGET_ANGLE_INIT_VAL and self.green_angle != COLOR_TARGET_ANGLE_INIT_VAL:
@@ -856,10 +874,9 @@ class SeigoBot():
             for i in range(rate):
 
                 # check front/back
-                if self.front_scan <= DISTANCE_TO_WALL_THRESHOLD:
-                    print("front_scan", front_scan)
-                elif self.back_scan <= DISTANCE_TO_WALL_THRESHOLD:
-                    print("back_scan", back_scan)
+                if self.f_isFrontBumperHit == True:
+                    print("f_isFrontBumperHit")
+                    self.Public_Twist_When_Bumper_Hit(-0.2, 0)
 
                 # keep enemy marker (RED/GREEN) to center position
                 ret = self.keepMarkerToCenter(RED, DISTANCE_KEEP_TO_ENEMY_THRESHOLD)
@@ -901,10 +918,9 @@ class SeigoBot():
             return 0
 
         # check front/back
-        if self.front_scan <= DISTANCE_TO_WALL_THRESHOLD:
-            print("front_scan", front_scan)
-        elif self.back_scan <= DISTANCE_TO_WALL_THRESHOLD:
-            print("back_scan", back_scan)
+        if self.f_isFrontBumperHit == True:
+            print("f_isFrontBumperHit")
+            self.Public_Twist_When_Bumper_Hit(-0.2, 0)
 
         # init search process
         if self.search_mode_process_step_idx < 0: # -1
@@ -953,10 +969,9 @@ class SeigoBot():
             for i in range(rate):
 
                 # check front/back
-                if self.front_scan <= DISTANCE_TO_WALL_THRESHOLD:
-                    print("front_scan", front_scan)
-                elif self.back_scan <= DISTANCE_TO_WALL_THRESHOLD:
-                    print("back_scan", back_scan)
+                if self.f_isFrontBumperHit == True:
+                    print("f_isFrontBumperHit")
+                    self.Public_Twist_When_Bumper_Hit(-0.2, 0)
 
                 # Is there something ahead?
                 if np.max(self.scan.ranges[0:5]) < 0.4 and np.max(self.scan.ranges[355:359]) < 0.4:
