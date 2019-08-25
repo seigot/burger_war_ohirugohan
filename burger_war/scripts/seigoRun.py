@@ -58,7 +58,7 @@ FIND_ENEMY_LOOKON = 3
 # threshold
 DISTANCE_KEEP_TO_ENEMY_THRESHOLD = 0.45 #1.5
 DISTANCE_KEEP_TO_ENEMY_THRESHOLD_WHEN_LOWWER_SCORE = 0.45
-DISTANCE_TO_WALL_THRESHOLD = 0.1
+DISTANCE_TO_WALL_THRESHOLD = 0.05
 ELAPSED_TIME_TO_TRANSITION_THRESHOLD = 75 # (s)
 F_IS_LOWWER_SCORE_THRESHOLD = 2
 
@@ -452,7 +452,7 @@ class SeigoBot():
         self.back_scan = (sum(self.scan.ranges[176:185])) / 10
 
         # RESPECT @koy_tak        
-        if self.scan.ranges[0] < 0.05 or self.scan.ranges[10] < 0.05 or self.scan.ranges[350] < 0.05:
+        if self.scan.ranges[0] < DISTANCE_TO_WALL_THRESHOLD or self.scan.ranges[10] < DISTANCE_TO_WALL_THRESHOLD or self.scan.ranges[350] < DISTANCE_TO_WALL_THRESHOLD:
             self.f_isFrontBumperHit = True
             self.cancelGoal()
         else:
