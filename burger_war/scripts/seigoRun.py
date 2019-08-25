@@ -296,7 +296,6 @@ class SeigoBot():
     time_start = 0
     f_Is_lowwer_score = False
     f_isFrontBumperHit = False
-    f_isRearBumperHit = False
     basic_mode_process_step_idx = 0 # process step in basic MODE
     search_mode_process_step_idx = -1 # process step in search MODE
     
@@ -458,12 +457,6 @@ class SeigoBot():
             self.cancelGoal()
         else:
             self.f_isFrontBumperHit = False
-
-        if self.scan.ranges[180] < 0.02 or self.scan.ranges[170] < 0.02 or self.scan.ranges[190] < 0.02:
-            self.f_isRearBumperHit = True
-            self.cancelGoal()
-        else:
-            self.f_isRearBumperHit = False
 
     def find_rect_of_target_color(self, image, color_type): # r:0, g:1, b:2
         hsv = cv2.cvtColor(image, cv2.COLOR_BGR2HSV_FULL)
