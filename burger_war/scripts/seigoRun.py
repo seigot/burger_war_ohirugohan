@@ -313,7 +313,7 @@ class SeigoBot():
 
         # Lidar
         self.scan = LaserScan()
-        topicname_scan = "/" + self.name + "/scan"
+        topicname_scan = "scan"
         self.lidar_sub = rospy.Subscriber(topicname_scan, LaserScan, self.lidarCallback)
         self.front_distance = DISTANCE_TO_ENEMY_INIT_VAL # init
         self.front_scan = DISTANCE_TO_ENEMY_INIT_VAL
@@ -324,7 +324,7 @@ class SeigoBot():
         self.img = None
         self.camera_preview = True
         self.bridge = CvBridge()
-        topicname_image_raw = "/" + self.name + "/image_raw"
+        topicname_image_raw = "image_raw"
         self.image_sub = rospy.Subscriber(topicname_image_raw, Image, self.imageCallback)
         self.red_angle = COLOR_TARGET_ANGLE_INIT_VAL # init
         self.blue_angle = COLOR_TARGET_ANGLE_INIT_VAL # init
@@ -348,18 +348,18 @@ class SeigoBot():
         self.th = 0;
 
         # war status
-        topicname_war_state = "/" + self.name + "/war_state"
+        topicname_war_state = "war_state"
 	self.war_state = rospy.Subscriber(topicname_war_state, String, self.stateCallback)
         self.my_score = 0
         self.enemy_score = 0
         self.act_mode = ActMode.BASIC
 
         # odom
-        topicname_odom = "/" + self.name + "/odom"
+        topicname_odom = "odom"
 	self.odom = rospy.Subscriber(topicname_odom, Odometry, self.odomCallback)
 
         # amcl pose
-        topicname_amcl_pose = "/" + self.name + "/amcl_pose"
+        topicname_amcl_pose = "amcl_pose"
 	self.amcl_pose = rospy.Subscriber(topicname_amcl_pose, PoseWithCovarianceStamped, self.AmclPoseCallback)
         
         # time
@@ -551,7 +551,7 @@ class SeigoBot():
         if len(rects) > 0:
             rect = max(rects, key=(lambda x: x[2] * x[3]))
             if rect[3] > 10:
-                cv2.rectangle(frame, tuple(rect[0:2]), tuple(rect[0:2] + rect[2:4]), (0, 0, 255), thickness=2)
+                cv2.rectangle(frame, tuple(rect[0:2]), tuple(rect[0:2] + rect[2:4]), (0, 255, 0), thickness=2)
                 # angle(rad)
                 tmp_angle = ((rect[0]+rect[0]+rect[2])/2-(img_w/2)) *0.077
                 self.green_angle = tmp_angle * np.pi / 180
@@ -570,7 +570,7 @@ class SeigoBot():
         rects = self.find_rect_of_target_color(frame, BLUE)
         if len(rects) > 0:
             rect = max(rects, key=(lambda x: x[2] * x[3]))
-            cv2.rectangle(frame, tuple(rect[0:2]), tuple(rect[0:2] + rect[2:4]), (0, 0, 255), thickness=2)
+            cv2.rectangle(frame, tuple(rect[0:2]), tuple(rect[0:2] + rect[2:4]), (255, 0, 0), thickness=2)
             # angle(rad)
             tmp_angle = ((rect[0]+rect[0]+rect[2])/2-(img_w/2)) *0.077
             self.blue_angle = tmp_angle * np.pi / 180
