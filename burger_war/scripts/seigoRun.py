@@ -454,6 +454,7 @@ class SeigoBot():
         # RESPECT @koy_tak        
 	if (self.scan.ranges[0] != 0 and self.scan.ranges[0] < DISTANCE_TO_WALL_THRESHOLD) or (self.scan.ranges[10] != 0 and self.scan.ranges[10] < DISTANCE_TO_WALL_THRESHOLD) or (self.scan.ranges[350] != 0 and self.scan.ranges[350] < DISTANCE_TO_WALL_THRESHOLD):
             self.f_isFrontBumperHit = True
+            printf("self.f_isFrontBumperHit = True")
             self.cancelGoal()
         else:
             self.f_isFrontBumperHit = False
@@ -572,7 +573,7 @@ class SeigoBot():
             self.blue_angle = COLOR_TARGET_ANGLE_INIT_VAL
 
         # either red/green color found, publish cancel topic
-        if self.red_angle != COLOR_TARGET_ANGLE_INIT_VAL or self.green_angle != COLOR_TARGET_ANGLE_INIT_VAL:
+        if self.red_angle != COLOR_TARGET_ANGLE_INIT_VAL and self.green_angle != COLOR_TARGET_ANGLE_INIT_VAL:
             self.cancelGoal()
 
         #    if self.camera_preview:
