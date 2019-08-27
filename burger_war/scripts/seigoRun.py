@@ -452,7 +452,7 @@ class SeigoBot():
         self.back_scan = (sum(self.scan.ranges[176:185])) / 10
 
         # RESPECT @koy_tak        
-        if self.scan.ranges[0] < DISTANCE_TO_WALL_THRESHOLD or self.scan.ranges[10] < DISTANCE_TO_WALL_THRESHOLD or self.scan.ranges[350] < DISTANCE_TO_WALL_THRESHOLD:
+	if (self.scan.ranges[0] != 0 and self.scan.ranges[0] < DISTANCE_TO_WALL_THRESHOLD) or (self.scan.ranges[10] != 0 and self.scan.ranges[10] < DISTANCE_TO_WALL_THRESHOLD) or (self.scan.ranges[350] != 0 and self.scan.ranges[350] < DISTANCE_TO_WALL_THRESHOLD):
             self.f_isFrontBumperHit = True
             self.cancelGoal()
         else:
