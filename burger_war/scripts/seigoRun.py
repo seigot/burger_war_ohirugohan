@@ -647,7 +647,8 @@ class SeigoBot():
         twist.linear.x = x; twist.linear.y = 0; twist.linear.z = 0
         twist.angular.x = 0; twist.angular.y = 0; twist.angular.z = th
         self.vel_pub.publish(twist)
-
+        time.sleep(0.500)
+        
         return 0
 
     def trackEnemy(self, rect):
@@ -782,7 +783,8 @@ class SeigoBot():
     def Public_Twist_When_Bumper_Hit(self, _x, _th):
         twist = self.getTwist(_x, _th)
         self.vel_pub.publish(twist)
-
+        time.sleep(0.500)
+        
     def getTwist(self, _x, _th):
         twist = Twist()
         x = _x
