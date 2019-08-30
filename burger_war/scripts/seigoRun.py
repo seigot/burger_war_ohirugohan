@@ -27,6 +27,7 @@ import json
 # camera image 640*480
 img_w = 640
 img_h = 480
+image_resize_scale = 8
 
 fieldWidth = 170
 fieldHeight = 170
@@ -518,17 +519,19 @@ class SeigoBot():
             print(e)
 
         # print(self.img);
-        frame = self.img
-        # frame = cv2.resize(self.img, (64,64))
+        # frame = self.img
+        size = (img_w/image_resize_scale, img_h/image_resize_scale)
+        frame = cv2.resize(self.img, size)
         # red
         rects = self.find_rect_of_target_color(frame, RED)
         if len(rects) > 0:
             rect = max(rects, key=(lambda x: x[2] * x[3]))
-            if rect[3] > 10: # if red circle is enemy one (check if not noise)
+            if rect[3] > 2: # if red circle is enemy one (check if not noise)
                 cv2.rectangle(frame, tuple(rect[0:2]), tuple(rect[0:2] + rect[2:4]), (0, 0, 255), thickness=2)
                 # angle(rad)
-                tmp_angle = ((rect[0]+rect[0]+rect[2])/2-(img_w/2)) *0.077
+                tmp_angle = ((rect[0]+rect[0]+rect[2])/2-(img_w/(2*image_resize_scale)))*image_resize_scale *0.077
                 self.red_angle = tmp_angle * np.pi / 180
+                print ("red_angle", tmp_angle, self.red_angle)
                 # distance (m)
                 if rect[1] < len(enemyTable):
                     self.red_distance = enemyTable[rect[1]] if enemyTable[rect[1]] > 0 else 1
@@ -546,10 +549,10 @@ class SeigoBot():
         rects = self.find_rect_of_target_color(frame, GREEN)
         if len(rects) > 0:
             rect = max(rects, key=(lambda x: x[2] * x[3]))
-            if rect[3] > 10:
+            if rect[3] > 1:
                 cv2.rectangle(frame, tuple(rect[0:2]), tuple(rect[0:2] + rect[2:4]), (0, 255, 0), thickness=2)
                 # angle(rad)
-                tmp_angle = ((rect[0]+rect[0]+rect[2])/2-(img_w/2)) *0.077
+                tmp_angle = ((rect[0]+rect[0]+rect[2])/2-(img_w/(2*image_resize_scale)))*image_resize_scale *0.077
                 self.green_angle = tmp_angle * np.pi / 180
                 # print ("green_angle", tmp_angle, self.green_angle )
                 # print ( tmp_angle )
@@ -568,7 +571,7 @@ class SeigoBot():
             rect = max(rects, key=(lambda x: x[2] * x[3]))
             cv2.rectangle(frame, tuple(rect[0:2]), tuple(rect[0:2] + rect[2:4]), (255, 0, 0), thickness=2)
             # angle(rad)
-            tmp_angle = ((rect[0]+rect[0]+rect[2])/2-(img_w/2)) *0.077
+            tmp_angle = ((rect[0]+rect[0]+rect[2])/2-(img_w/(2*image_resize_scale)))*image_resize_scale *0.077
             self.blue_angle = tmp_angle * np.pi / 180
             # print ("blue_angle", tmp_angle, self.blue_angle )
         else:
@@ -638,7 +641,7 @@ class SeigoBot():
         else:
             _x = 0
             
-        x = 0.5 * _x
+        x = 0.5 * image_resize_scale * _x
         th = 3 * angle * (-1) # rad/s
         twist = Twist()
         twist.linear.x = x; twist.linear.y = 0; twist.linear.z = 0
