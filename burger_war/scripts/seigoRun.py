@@ -58,7 +58,7 @@ FIND_ENEMY_LOOKON = 3
 # threshold
 DISTANCE_KEEP_TO_ENEMY_THRESHOLD = 0.45 #1.5
 DISTANCE_KEEP_TO_ENEMY_THRESHOLD_WHEN_LOWWER_SCORE = 0.45
-DISTANCE_TO_WALL_THRESHOLD = 0.05
+DISTANCE_TO_WALL_THRESHOLD = 0.15
 ELAPSED_TIME_TO_TRANSITION_THRESHOLD = 75 # (s)
 F_IS_LOWWER_SCORE_THRESHOLD = 2
 
@@ -67,8 +67,8 @@ search_coordinate = np.array([
     # x, y, th
     [0.4, 0, PI],     # 9
     [0.9, 0, PI],     # 10
-    [0.9, -0.5, PI],  # 11
-    [0.9, 0.5, PI],   # 12
+    [0.9, -0.42, PI],  # 11
+    [0.9, 0.42, PI],   # 12
     [0.9, 0, PI],     # 13
     [0, 0.5, 0],      # 14
     [0, 0.5, PI],     # 15
@@ -76,8 +76,8 @@ search_coordinate = np.array([
     [0, 0.5, PI*5/4],
     [-0.4, 0.0, 0],   # 1
     [-0.9, 0.0, 0],   # 2
-    [-0.9, 0.5, 0],   # 3
-    [-0.9, -0.5, 0],  # 4
+    [-0.9, 0.42, 0],   # 3
+    [-0.9, -0.42, 0],  # 4
     [-0.9, 0.0, 0],   # 5
     [0, -0.5, 0],     # 6
     [0, -0.5, PI],    # 7
@@ -90,8 +90,8 @@ basic_coordinate = np.array([
     # x, y, th
     [-0.4, 0.0, 0],  # 1
     [-0.9, 0.0, 0],  # 2
-    [-0.9, 0.5, 0],  # 3
-    [-0.9, -0.5, 0], # 4
+    [-0.9, 0.42, 0],  # 3
+    [-0.9, -0.42, 0], # 4
     [-0.9, 0.0, 0],  # 5
     [0, -0.5, 0],    # 6
     [0, -0.5, PI],   # 7
@@ -511,6 +511,7 @@ class SeigoBot():
     def imageCallback(self, data):
         redFound = False
         greenFound = False
+
         try:
             self.img = self.bridge.imgmsg_to_cv2(data, "bgr8")
         except CvBridgeError as e:
@@ -518,6 +519,7 @@ class SeigoBot():
 
         # print(self.img);
         frame = self.img
+        # frame = cv2.resize(self.img, (64,64))
         # red
         rects = self.find_rect_of_target_color(frame, RED)
         if len(rects) > 0:
@@ -578,8 +580,8 @@ class SeigoBot():
 
         #    if self.camera_preview:
         # print("image show")
-        cv2.imshow("Image window", frame)
-        cv2.waitKey(1)
+        # cv2.imshow("Image window", frame)
+        # cv2.waitKey(1)
 
     def stateCallback(self, state):
         # print(state.data)
@@ -632,10 +634,11 @@ class SeigoBot():
         # keep distance to enemy when both red/green color found
         if self.red_angle != COLOR_TARGET_ANGLE_INIT_VAL and self.green_angle != COLOR_TARGET_ANGLE_INIT_VAL:
             _x = self.red_distance - distance_threshold
+            
         else:
             _x = 0
             
-        x = _x
+        x = 0.5 * _x
         th = 3 * angle * (-1) # rad/s
         twist = Twist()
         twist.linear.x = x; twist.linear.y = 0; twist.linear.z = 0
@@ -668,7 +671,7 @@ class SeigoBot():
                 # Maybe FOUND->LOOKON (Slow move)
                 self.find_enemy = FIND_ENEMY_LOOKON
                 self.th = np.pi / 16.0 / self.enemy_direct
-            print("Found enemy")
+            #print("Found enemy")
 
         else:
             # Lost enemy...
@@ -698,7 +701,7 @@ class SeigoBot():
                     # Is there something ahead?
                     if np.max(self.scan.ranges[0:5]) < 1.0 and np.max(self.scan.ranges[355:359]) < 1.0:
                         # Check both side, I do not watch the wall!
-                        print("Blind")
+                        #print("Blind")
                         if self.enemy_direct > 0 and np.max(self.scan.ranges[80:100]) < 1.0:
                             self.enemy_direct = self.enemy_direct * -1
                         if self.enemy_direct < 0 and np.max(self.scan.ranges[260:280]) < 1.0:
@@ -720,7 +723,7 @@ class SeigoBot():
                         self.th = right_scan
                     else:
                         self.th = left_scan
-            print("Lost enemy")
+            #print("Lost enemy")
 
     def drawMap(self):
         myPosX = self.myPosX
@@ -854,7 +857,7 @@ class SeigoBot():
 
         # keep sniping..
         cnt = 0
-        rate=1500
+        rate=100
         r = rospy.Rate(rate) # change speed fps
         while not rospy.is_shutdown():
             if cnt%2 == 0:
@@ -949,7 +952,7 @@ class SeigoBot():
         print("func_attack")
 
         cnt = 0
-        rate=1500
+        rate=100
         r = rospy.Rate(rate) # change speed fps
         while not rospy.is_shutdown():
             # search 
@@ -996,7 +999,7 @@ class SeigoBot():
         
         # Main Loop --->
         self.func_init()
-        r = rospy.Rate(1500) # change speed fps
+        r = rospy.Rate(100) # change speed fps
         while not rospy.is_shutdown():
             print("act_mode: ", self.act_mode)
 
