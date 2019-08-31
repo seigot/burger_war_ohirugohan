@@ -534,7 +534,8 @@ class SeigoBot():
                 print ("red_angle", tmp_angle, self.red_angle)
                 # distance (m)
                 if rect[1] < len(enemyTable):
-                    self.red_distance = enemyTable[rect[1]] if enemyTable[rect[1]] > 0 else 1
+                    tmp_dist=enemyTable[image_resize_scale*rect[1]]
+                    self.red_distance = tmp_dist if tmp_dist > 0 else 1
             else:
                 self.red_distance = 1
                 
@@ -656,7 +657,8 @@ class SeigoBot():
         if rect is not None:
             # Estimate the distance from enemy.
             if rect[1] < len(enemyTable):
-                d = enemyTable[rect[1]] if enemyTable[rect[1]] > 0 else 1
+                tmp_dist=enemyTable[image_resize_scale*rect[1]]
+                d = tmp_dist if tmp_dist > 0 else 1
             else:
                 d = 1
             # Estimate acceleration parameter
