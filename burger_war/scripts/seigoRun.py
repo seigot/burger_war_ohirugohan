@@ -27,6 +27,20 @@ image_resize_scale = 1 # 8
 # PI
 PI = 3.1415
 
+# robot running coordinate in BASIC MODE
+basic_coordinate = np.array([
+    # x, y, th
+    [-0.4, 0.0, 0],  # 1
+    [-0.9, 0.0, 0],  # 2
+    [-0.9, 0.4, 0],  # 3
+    [-0.9, -0.4, 0], # 4
+    [-0.9, 0.0, 0],  # 5
+    [0, -0.5, 0],    # 6
+    [0, -0.5, PI],   # 7
+    [0, -0.5, PI/2], # 8
+    [0, -1.2, PI/2]] # 17
+)
+
 class RandomBot():
     def __init__(self, bot_name="NoName"):
         # bot name 
@@ -42,6 +56,8 @@ class RandomBot():
         self.bridge = CvBridge()
         topicname_image_raw = "image_raw"
         self.image_sub = rospy.Subscriber(topicname_image_raw, Image, self.imageCallback)
+
+        self.basic_mode_process_step_idx = 0 # process step in basic MODE
 
     # camera image call back sample
     # convert image topic to opencv object and show
@@ -67,7 +83,7 @@ class RandomBot():
         self.client.wait_for_server()
 
         goal = MoveBaseGoal()
-        goal.target_pose.header.frame_id = self.name + "/map"
+        goal.target_pose.header.frame_id = "map"
         goal.target_pose.header.stamp = rospy.Time.now()
         goal.target_pose.pose.position.x = x
         goal.target_pose.pose.position.y = y
@@ -98,11 +114,6 @@ class RandomBot():
 
     def calcTwist(self):
 
-        _x = -0.4
-        _y = 0.0
-        _th = 0
-        # ret = self.setGoal(_x, _y, _th)
-
         value = random.randint(1,1000)
         if value < 250:
             x = 0.2
@@ -132,6 +143,18 @@ class RandomBot():
         control_speed = 0
         control_turn = 0
 
+        # ---> testrun
+        while not rospy.is_shutdown():
+            NextGoal_coor = basic_coordinate[ self.basic_mode_process_step_idx ]
+            _x = NextGoal_coor[0]
+            _y = NextGoal_coor[1]
+            _th = NextGoal_coor[2]
+            ret = self.setGoal(_x, _y, _th)
+            self.basic_mode_process_step_idx += 1
+            if self.basic_mode_process_step_idx >= len(basic_coordinate):
+                self.basic_mode_process_step_idx = 0
+        # ---< testrun
+            
         while not rospy.is_shutdown():
             twist = self.calcTwist()
             print(twist)
