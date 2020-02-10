@@ -69,6 +69,13 @@ class RandomBot():
 
         size = (img_w/image_resize_scale, img_h/image_resize_scale)
         frame = cv2.resize(self.img, size)
+
+        ###
+        #
+        # ここに観音さんスペシャル加える
+        #
+        ###
+
         if self.camera_preview:
             print("image show")
             cv2.imshow("Image window", frame)
