@@ -57,11 +57,11 @@ FIND_ENEMY_WAIT = 2
 FIND_ENEMY_LOOKON = 3
 
 # threshold
-DISTANCE_KEEP_TO_ENEMY_THRESHOLD = 0.45 #1.5
-DISTANCE_KEEP_TO_ENEMY_THRESHOLD_WHEN_LOWWER_SCORE = 0.45
+DISTANCE_KEEP_TO_ENEMY_THRESHOLD = 0.55 #1.5
+DISTANCE_KEEP_TO_ENEMY_THRESHOLD_WHEN_LOWWER_SCORE = 0.55
 DISTANCE_TO_WALL_THRESHOLD = 0.15
 DISTANCE_TO_RED_COLOR_THRESHOLD = 1.00
-ELAPSED_TIME_TO_TRANSITION_THRESHOLD = 75 # (s)
+ELAPSED_TIME_TO_ATTACK_ENEMY = 110 # (s)
 F_IS_LOWWER_SCORE_THRESHOLD = 2
 
 # robot running coordinate in BASIC MODE
@@ -71,24 +71,22 @@ basic_coordinate = np.array([
     [-0.9, -0.4, 0],  # 2
     [-0.9, 0.0, 0],   # 3
     [-0.4, 0.0, 0],   # 4
-    [-0.3, -0.3, PI*7/4], # 5
-    [0, -0.5, 0],     # 6
-    [0, -0.5, PI/2],  # 7
-    [0, -0.5, PI],    # 8
-    [0, -0.5, PI/2],  # 9
+    [-0.3, 0.3, PI*1/4],# 5
+    [0, 0.5, 0],      # 6
+    [0, 0.5, PI*3/2], # 7
+    [0, 0.5, PI],     # 8
+    [0, 0.5, PI*7/4], # 9 
     [0.4, 0, PI],     # 10
-    [0.3, 0.3, PI*3/4],# 11
-    [0, -0.5, PI],     # 12
-    [0, -0.5, PI*6/4], # 13
-    [0, -0.5, 0],      # 14
-    [0, -0.5, PI*6/4], # 15
-    [0, -0.5, PI*5/4], # 16
-    [0, 0.5, 0],      # 17
-    [0, 0.5, PI],     # 18
-    [0, 0.5, PI*2/3], # 19
-    [0, 0.5, PI*5/4], # 20
-    [-0.4, 0.0, 0],   # 21
-    [-0.9, 0.0, 0]    # 22
+    [0.9, 0.4, PI],     # 
+    [0.9, -0.4, PI],    # 
+    [0.3, -0.3, PI*5/4], # 11
+    [0, -0.5, PI],    # 12
+    [0, -0.5, PI/2],  # 13
+    [0, -0.5, 0],     # 14
+    [0, -0.5, PI],    # 15
+    [-0.3, -0.3, PI*3/4], # 16
+    [-0.4, 0.0, 0],   # 17
+    [-0.9, 0.0, 0]    # 18
 ])
 
 # enemy red circle distance table
@@ -294,7 +292,7 @@ class SeigoBot():
         # bot name 
         self.name = bot_name
         print("self.name", self.name)
-        self.ImgDebug = True
+        self.ImgDebug = False
 
         # velocity publisher
         self.vel_pub = rospy.Publisher('cmd_vel', Twist,queue_size=1)
@@ -566,9 +564,14 @@ class SeigoBot():
 
         # either red/green color found, publish cancel topic
         if self.red_angle != COLOR_TARGET_ANGLE_INIT_VAL and self.green_angle != COLOR_TARGET_ANGLE_INIT_VAL:
-            # if red color is near position
-            if self.red_distance < DISTANCE_TO_RED_COLOR_THRESHOLD:
-                self.cancelGoal()
+            # if ElapsedTime is small, ignore enemy...
+            if self.getElapsedTime() > ELAPSED_TIME_TO_ATTACK_ENEMY:
+                # if red color is near position
+                if self.red_distance < DISTANCE_TO_RED_COLOR_THRESHOLD:
+                    self.cancelGoal()
+            else:
+                print("ignore enemy...", self.getElapsedTime() )
+                self.red_distance = DISTANCE_TO_ENEMY_INIT_VAL
 
         if self.ImgDebug == True:
             cv2.imshow('image',frame)
