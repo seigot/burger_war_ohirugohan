@@ -61,7 +61,7 @@ DISTANCE_KEEP_TO_ENEMY_THRESHOLD = 0.55 #1.5
 DISTANCE_KEEP_TO_ENEMY_THRESHOLD_WHEN_LOWWER_SCORE = 0.55
 DISTANCE_TO_WALL_THRESHOLD = 0.15
 DISTANCE_TO_RED_COLOR_THRESHOLD = 1.00
-ELAPSED_TIME_TO_ATTACK_ENEMY = 110 # (s)
+ELAPSED_TIME_TO_ATTACK_ENEMY = 90 # (s)
 F_IS_LOWWER_SCORE_THRESHOLD = 2
 
 # robot running coordinate in BASIC MODE
@@ -77,8 +77,8 @@ basic_coordinate = np.array([
     [0, 0.5, PI],     # 8
     [0, 0.5, PI*7/4], # 9 
     [0.4, 0, PI],     # 10
-    [0.9, 0.4, PI],     # 
-    [0.9, -0.4, PI],    # 
+#    [0.9, 0.4, PI],     # 
+#    [0.9, -0.4, PI],    # 
     [0.3, -0.3, PI*5/4], # 11
     [0, -0.5, PI],    # 12
     [0, -0.5, PI/2],  # 13
