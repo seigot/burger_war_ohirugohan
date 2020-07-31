@@ -5,7 +5,7 @@ RESULTLOG="$HOME/catkin_ws/src/burger_war/autotest/result.log"
 
 echo "iteration, enemy_level, game_time(s), date, my_score, enemy_score, battle_result" > $RESULTLOG
 
-LOOP_TIMES=20
+LOOP_TIMES=1
 
 function do_game(){
     ITERATION=$1
