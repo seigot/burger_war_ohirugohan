@@ -59,7 +59,7 @@ function check_latest_hash(){
     git pull
     GITLOG_HASH=`git log | head -1 | cut -d' ' -f2`
     if [ "$GITLOG_HASH" != "$LATEST_GITLOG_HASH" ];then
-	echo "#--> $GITLOG_HASH" >> $RESULTLOG
+	echo "#--> latest commit:$GITLOG_HASH" >> $RESULTLOG
 	LATEST_GITLOG_HASH=$GITLOG_HASH
     fi
     popd
