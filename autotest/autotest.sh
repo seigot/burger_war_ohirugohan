@@ -7,7 +7,7 @@ BURGER_WAR_AUTOTEST_LOG_REPOSITORY=$HOME/catkin_ws/src/burger_war_autotest
 RESULTLOG=$BURGER_WAR_REPOSITORY/autotest/result.log
 SRC_LOG=$RESULTLOG 
 DST_LOG=$BURGER_WAR_AUTOTEST_LOG_REPOSITORY/result/result-20200803.log
-LATEST_GITLOG_HASH="xxx"
+LATEST_GITLOG_HASH="xxxx"
 
 echo "iteration, enemy_level, game_time(s), date, my_score, enemy_score, battle_result" > $RESULTLOG
 
