@@ -12,6 +12,8 @@
     <node pkg="burger_war" type="seigoRun.py" name="seigoRun" output="screen">
       <param name="robot_name" value="$(arg side)" />
     </node>
+    <include file="$(find burger_war)/launch/obstacle_detector.launch"/>
+    <node pkg="burger_war" type="enemy_detector.py" name="enemy_detector_node" output="screen"/>
     <!-- END sample program node -->
 
     <!-- End of your space  -->
