@@ -48,7 +48,7 @@ class fight_result:
             winning_rate_transition.append(
                 float(sum(self.result[i:i+num]))/float(len(self.result[i:i+num])))
             my_point_transtion.append(
-                float(sum(self.my_score[i:i+num-1]))/float(len(self.result[i:i+num])))
+                float(sum(self.my_score[i:i+num]))/float(len(self.result[i:i+num])))
             enemy_point_transtion.append(
                 float(sum(self.enemy_score[i:i+num]))/float(len(self.result[i:i+num])))
 
@@ -66,6 +66,7 @@ class fight_result:
                 sum(self.my_score[start:i+1])/float(i-start))
             enemy_point_transtion.append(
                 sum(self.enemy_score[start:i+1])/float(i-start))
+            start = i
         return winning_rate_transition, my_point_transtion, enemy_point_transtion
 
     def plot(self, seq, name):
@@ -157,9 +158,9 @@ def main():
           + '{:.2f}'.format(clubhouse.enemy_average()).rjust(len('vs clubhouse')))
     print('\nnumber of games: '+str(len(cheese.result)))
 
-    cheese.plot(10, 'vs_cheese')
-    teriyaki.plot(10, 'vs_teriyaki')
-    clubhouse.plot(10, 'vs_clubhouse')
+    cheese.plot(5, 'vs_cheese')
+    teriyaki.plot(5, 'vs_teriyaki')
+    clubhouse.plot(5, 'vs_clubhouse')
 
 
 if __name__ == "__main__":
