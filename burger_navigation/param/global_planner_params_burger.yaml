@@ -26,13 +26,13 @@ GlobalPlanner:
     neutral_cost : 50
     #Neutral Cost (dynamic reconfigure
     
-    cost_factor : 3.
+    cost_factor : 5.0
     #Factor to multiply each cost from costmap by (dynamic reconfigure
     
     publish_potential: True
     #Publish Potential Costmap (dynamic reconfigure
     
-    orientation_mode : 0
+    orientation_mode : 1
     #How to set the orientation of each point (None=0, Forward=1, Interpolate=2, ForwardThenInterpolate=3, Backward=4, Leftward=5, Rightward=6 (dynamic reconfigure
     
     orientation_window_size : 1
