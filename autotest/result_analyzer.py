@@ -17,6 +17,8 @@ class fight_result:
         self.my_score = []
         self.enemy_score = []
         self.result = []
+        self.result_onekillwin = []
+        self.result_onekilllose = []
         self.commit_seq = []
 
     def set_commit_seq(self):
@@ -30,6 +32,16 @@ class fight_result:
         else:
             self.result.append(0)
 
+        # summarize 1kill result
+        if me > enemy+10:
+            self.result_onekillwin.append(1)
+        else:
+            self.result_onekillwin.append(0)
+        if me+10 < enemy:
+            self.result_onekilllose.append(1)
+        else:
+            self.result_onekilllose.append(0)
+
     def my_average(self):
         return sum(self.my_score)/len(self.my_score)
 
@@ -39,6 +51,12 @@ class fight_result:
     def winning_rate(self):
         return float(sum(self.result))/float(len(self.result))
 
+    def onekillwin_rate(self):
+        return float(sum(self.result_onekillwin))/float(len(self.result_onekillwin))
+
+    def onekilllose_rate(self):
+        return float(sum(self.result_onekilllose))/float(len(self.result_onekilllose))
+    
     def transition(self, num):
         winning_rate_transition = []
         my_point_transtion = []
@@ -146,6 +164,16 @@ def main():
           + '{:.2f}'.format(teriyaki.winning_rate()
                             ).rjust(len('vs teriyaki'))+'    '
           + '{:.2f}'.format(clubhouse.winning_rate()).rjust(len('vs clubhouse')))
+
+    print('onekill win : '+'{:.2f}'.format(cheese.onekillwin_rate()).rjust(len('vs cheese'))+'    '
+          + '{:.2f}'.format(teriyaki.onekillwin_rate()
+                            ).rjust(len('vs teriyaki'))+'    '
+          + '{:.2f}'.format(clubhouse.onekillwin_rate()).rjust(len('vs clubhouse')))
+
+    print('onekill lose: '+'{:.2f}'.format(cheese.onekilllose_rate()).rjust(len('vs cheese'))+'    '
+          + '{:.2f}'.format(teriyaki.onekilllose_rate()
+                            ).rjust(len('vs teriyaki'))+'    '
+          + '{:.2f}'.format(clubhouse.onekilllose_rate()).rjust(len('vs clubhouse')))
 
     print('my_score:     '+'{:.2f}'.format(cheese.my_average()).rjust(len('vs cheese'))+'    '
           + '{:.2f}'.format(teriyaki.my_average()
