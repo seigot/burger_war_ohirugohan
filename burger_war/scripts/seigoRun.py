@@ -23,6 +23,7 @@ from move_base_msgs.msg import MoveBaseAction, MoveBaseGoal
 from nav_msgs.msg import Odometry
 import actionlib_msgs
 import json
+from math import radians, degrees, atan2
 
 # camera image 640*480
 img_w = 640
@@ -65,29 +66,29 @@ ELAPSED_TIME_TO_ATTACK_ENEMY = 90 # (s)
 F_IS_LOWWER_SCORE_THRESHOLD = 2
 
 # robot running coordinate in BASIC MODE
+# RESPECT @raucha
 basic_coordinate = np.array([
     # x, y, th
-    [-0.9, 0.4, 0],   # 1
-    [-0.9, -0.4, 0],  # 2
-    [-0.9, 0.0, 0],   # 3
-    [-0.4, 0.0, 0],   # 4
-    [-0.3, 0.3, PI*1/4],# 5
-    [0, 0.5, 0],      # 6
-    [0, 0.5, PI*3/2], # 7
-    [0, 0.5, PI],     # 8
-    [0, 0.5, PI*7/4], # 9 
-    [0.4, 0.15, PI*5/4],  # 10
-#    [0.4, 0, PI],     # 10
-#    [0.9, 0.4, PI],     # 
-#    [0.9, -0.4, PI],    # 
-    [0.3, -0.3, PI*5/4], # 11
-    [0, -0.5, PI],    # 12
-    [0, -0.5, PI/2],  # 13
-    [0, -0.5, 0],     # 14
-    [0, -0.5, PI],    # 15
-    [-0.3, -0.3, PI*3/4], # 16
-    [-0.4, 0.0, 0],   # 17
-    [-0.9, 0.0, 0]    # 18
+    [-0.8, -0.4, radians(-10)],
+    [-0.8, 0.4, radians(10)],
+    [-0.5, 0, radians(0)],
+    [-0.5, 0, radians(45)],
+    [0, 0.5, radians(-180)],
+    [0, 0.5, radians(-90)],
+    [0, 0.5, radians(0)],
+    [0, 0.5, radians(60)],
+    [0.5, 1.0, radians(-45)],
+    [0.9, 0.55, radians(-180)],
+    [0.9, 0.55, radians(-45)],
+    [0.9, -0.6, radians(-180)],
+    [0.9, -0.6, radians(-135)],
+    [0.5, -1.0, radians(-135)],
+    [0.5, -1.0, radians(120)],
+    [0, -0.5, radians(0)],
+    [0, -0.5, radians(90)],
+    [0, -0.5, radians(-180)],
+    [0, -0.5, radians(135)],
+    [-0.5, 0, radians(0)]
 ])
 
 # enemy red circle distance table
