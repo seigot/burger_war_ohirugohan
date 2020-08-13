@@ -186,6 +186,15 @@ def main():
           + '{:.2f}'.format(clubhouse.enemy_average()).rjust(len('vs clubhouse')))
     print('\nnumber of games: '+str(len(cheese.result)))
 
+    total_winning_rate=cheese.winning_rate()*teriyaki.winning_rate()*clubhouse.winning_rate()
+    my_score_total=cheese.my_average()+teriyaki.my_average()+clubhouse.my_average()
+    enemy_score_total=cheese.enemy_average()+teriyaki.enemy_average()*clubhouse.enemy_average()
+
+    print('total_winning_rate   :  '+'{:.2f}'.format(total_winning_rate))
+    print('total_score(my)      :  '+'{:.2f}'.format(my_score_total))
+    print('total_score(enemy)   :  '+'{:.2f}'.format(enemy_score_total))
+    print('total_score(my-enemy):  '+'{:.2f}'.format(my_score_total-enemy_score_total))
+
     cheese.plot(5, 'vs_cheese')
     teriyaki.plot(5, 'vs_teriyaki')
     clubhouse.plot(5, 'vs_clubhouse')
