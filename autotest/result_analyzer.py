@@ -33,11 +33,11 @@ class fight_result:
             self.result.append(0)
 
         # summarize 1kill result
-        if me > enemy+10:
+        if me >= enemy+10:
             self.result_onekillwin.append(1)
         else:
             self.result_onekillwin.append(0)
-        if me+10 < enemy:
+        if me+10 <= enemy:
             self.result_onekilllose.append(1)
         else:
             self.result_onekilllose.append(0)
