@@ -66,6 +66,7 @@ ELAPSED_TIME_TO_ATTACK_ENEMY = 90 # (s)
 F_IS_LOWWER_SCORE_THRESHOLD = 2
 
 # robot running coordinate in BASIC MODE
+# RESPECT @raucha
 basic_coordinate = np.array([
     # x, y, th
     [-0.8, -0.4, radians(-10)],
@@ -79,8 +80,6 @@ basic_coordinate = np.array([
     [0.5, 1.0, radians(-45)],
     [0.9, 0.55, radians(-180)],
     [0.9, 0.55, radians(-45)],
-#    [1.46, 0, radians(-45)],  # top
-#    [1.46, 0, radians(-135)], # top
     [0.9, -0.6, radians(-180)],
     [0.9, -0.6, radians(-135)],
     [0.5, -1.0, radians(-135)],
