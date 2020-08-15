@@ -1,3 +1,10 @@
 sudo apt-get install ros-kinetic-dwa-local-planner
 sudo apt-get install ros-kinetic-global-planner
+sudo apt install -y libarmadillo-dev libarmadillo6  # necessary to install obstacle_detector
 git clone https://github.com/tysik/obstacle_detector.git
+
+# (例)obstacle_detectorインストール手順
+cd $HOME/catkin_ws/src
+git clone https://github.com/tysik/obstacle_detector.git
+cd $HOME/catkin_ws
+catkin build
