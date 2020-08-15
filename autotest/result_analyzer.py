@@ -89,7 +89,7 @@ class fight_result:
 
     def plot(self, seq, name):
         (winning_rate, my_point, enemy_point) = self.transition(seq)
-        fig = plt.figure()
+        fig = plt.figure(figsize=[20,10])
         self.rate = fig.add_subplot(1, 2, 1)
         self.plot_winning_rate(winning_rate, seq)
         self.score = fig.add_subplot(1, 2, 2)
@@ -127,8 +127,8 @@ class fight_result:
 
 
 def main():
-    path = 'autotest/result-20200810.log'
-    # path = 'autotest/result.log'
+    # path = 'autotest/result-20200806.log'
+    path = 'autotest/result.log'
     f = open(path)
     data = f.readlines()
     cheese = fight_result()
