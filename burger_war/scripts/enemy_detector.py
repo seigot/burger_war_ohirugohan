@@ -71,9 +71,7 @@ class EnemyDetector:
             self.enemy_pos.header.stamp = rospy.Time.now()
             self.enemy_pos.pose.pose.position.x = closest_enemy_x
             self.enemy_pos.pose.pose.position.y = closest_enemy_y
-            print msg.circles[num].velocity
             yaw = math.atan2(msg.circles[num].velocity.y, msg.circles[num].velocity.x)
-            print yaw*180/math.pi
             q = tf.transformations.quaternion_from_euler(0, 0, yaw)
             quaternion = Quaternion(x=q[0], y=q[1], z=q[2], w=q[3])
             self.enemy_pos.pose.pose.orientation = quaternion
