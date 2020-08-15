@@ -1,0 +1,3 @@
+sudo apt-get install ros-kinetic-dwa-local-planner
+sudo apt-get install ros-kinetic-global-planner
+git clone https://github.com/tysik/obstacle_detector.git
