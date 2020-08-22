@@ -1,0 +1,180 @@
+diff --git a/burger_navigation/CMakeLists.txt b/burger_navigation/CMakeLists.txt
+index 399008d..207db68 100644
+--- a/burger_navigation/CMakeLists.txt
++++ b/burger_navigation/CMakeLists.txt
+@@ -1,5 +1,5 @@
+ cmake_minimum_required(VERSION 2.8.3)
+-project(burger_navigation)
++project(burger_navigation_seigot)
+ 
+ ## Compile as C++11, supported in ROS Kinetic and newer
+ # add_compile_options(-std=c++11)
+diff --git a/burger_navigation/launch/burger_navigation.launch b/burger_navigation/launch/burger_navigation.launch
+index 1191922..525d46f 100644
+--- a/burger_navigation/launch/burger_navigation.launch
++++ b/burger_navigation/launch/burger_navigation.launch
+@@ -2,7 +2,7 @@
+ 
+ <launch>
+   <!-- Arguments -->
+-  <arg name="map_file" default="$(find burger_navigation)/maps/map_high_resolution.yaml"/>
++  <arg name="map_file" default="$(find burger_navigation_seigot)/maps/map_high_resolution.yaml"/>
+   <arg name="open_rviz" default="true"/>
+   <arg name="move_forward_only" default="false"/>
+   <arg name="cmd_vel_topic" default="cmd_vel" />
+@@ -62,13 +62,13 @@
+   <node pkg="move_base" type="move_base" respawn="false" name="move_base" output="screen">
+     <param name="base_local_planner" value="dwa_local_planner/DWAPlannerROS" />
+     <param name="base_global_planner" value="global_planner/GlobalPlanner" />
+-    <rosparam file="$(find burger_navigation)/param/costmap_common_params_burger.yaml" command="load" ns="global_costmap" />
+-    <rosparam file="$(find burger_navigation)/param/costmap_common_params_burger.yaml" command="load" ns="local_costmap" />
+-    <rosparam file="$(find burger_navigation)/param/local_costmap_params.yaml" command="load" />
+-    <rosparam file="$(find burger_navigation)/param/global_costmap_params.yaml" command="load" />
+-    <rosparam file="$(find burger_navigation)/param/move_base_params.yaml" command="load" />
+-    <rosparam file="$(find burger_navigation)/param/dwa_local_planner_params_burger.yaml" command="load" />
+-    <rosparam file="$(find burger_navigation)/param/global_planner_params_burger.yaml" command="load" />
++    <rosparam file="$(find burger_navigation_seigot)/param/costmap_common_params_burger.yaml" command="load" ns="global_costmap" />
++    <rosparam file="$(find burger_navigation_seigot)/param/costmap_common_params_burger.yaml" command="load" ns="local_costmap" />
++    <rosparam file="$(find burger_navigation_seigot)/param/local_costmap_params.yaml" command="load" />
++    <rosparam file="$(find burger_navigation_seigot)/param/global_costmap_params.yaml" command="load" />
++    <rosparam file="$(find burger_navigation_seigot)/param/move_base_params.yaml" command="load" />
++    <rosparam file="$(find burger_navigation_seigot)/param/dwa_local_planner_params_burger.yaml" command="load" />
++    <rosparam file="$(find burger_navigation_seigot)/param/global_planner_params_burger.yaml" command="load" />
+     <remap from="cmd_vel" to="$(arg cmd_vel_topic)"/>
+     <remap from="odom" to="$(arg odom_topic)"/>
+     <param name="DWAPlannerROS/min_vel_x" value="0.0" if="$(arg move_forward_only)" />
+@@ -83,7 +83,7 @@
+ 
+   <!-- rviz -->
+   <group if="$(arg open_rviz)"> 
+-    <node pkg="rviz" type="rviz" name="rviz" required="true" args="-d $(find burger_navigation)/rviz/burger_navigation.rviz">
++    <node pkg="rviz" type="rviz" name="rviz" required="true" args="-d $(find burger_navigation_seigot)/rviz/burger_navigation.rviz">
+       <remap from="/move_base_simple/goal" to="move_base_simple/goal"/>
+     </node>
+   </group>
+diff --git a/burger_navigation/package.xml b/burger_navigation/package.xml
+index f5d1ba2..a64e5ad 100644
+--- a/burger_navigation/package.xml
++++ b/burger_navigation/package.xml
+@@ -1,6 +1,6 @@
+ <?xml version="1.0"?>
+ <package>
+-  <name>burger_navigation</name>
++  <name>burger_navigation_seigot</name>
+   <version>0.0.0</version>
+   <description>The burger_navigation package</description>
+ 
+diff --git a/burger_war/CMakeLists.txt b/burger_war/CMakeLists.txt
+index f36baef..d0ccd46 100644
+--- a/burger_war/CMakeLists.txt
++++ b/burger_war/CMakeLists.txt
+@@ -1,5 +1,5 @@
+ cmake_minimum_required(VERSION 2.8.3)
+-project(burger_war)
++project(burger_war_seigot)
+ 
+ ## Compile as C++11, supported in ROS Kinetic and newer
+ # add_compile_options(-std=c++11)
+@@ -207,4 +207,4 @@ include_directories(
+ 
+ 
+ add_executable(randomRun src/randomRun.cpp)
+-target_link_libraries(randomRun ${catkin_LIBRARIES})
+\ No newline at end of file
++target_link_libraries(randomRun ${catkin_LIBRARIES})
+diff --git a/burger_war/launch/sim_robot_run.launch b/burger_war/launch/sim_robot_run.launch
+index 80306a9..9ebedb2 100644
+--- a/burger_war/launch/sim_robot_run.launch
++++ b/burger_war/launch/sim_robot_run.launch
+@@ -3,10 +3,12 @@
+   <arg name="enemy_level" default="1"/>
+ 
+ <!-- Your robot control node run  red side-->
+-  <include file="$(find burger_war)/launch/your_burger.launch">
+-    <arg name="robot_namespace" value="" /> <!-- "" or "enemy_bot" to change ns-->
++<group ns="enemy_bot">
++  <include file="$(find burger_war_seigot)/launch/your_burger.launch">
++    <arg name="robot_namespace" value="enemy_bot" /> <!-- "" or "enemy_bot" to change ns-->
+     <arg name="side" value="r" />
+   </include>
++</group>
+ 
+ <!-- enemy bot run  blue side-->
+   <group ns="enemy_bot">
+diff --git a/burger_war/launch/your_burger.launch b/burger_war/launch/your_burger.launch
+index 6dfce1d..5fb71cf 100644
+--- a/burger_war/launch/your_burger.launch
++++ b/burger_war/launch/your_burger.launch
+@@ -6,7 +6,7 @@
+ 
+     <!-- sample program node -->
+ 
+-    <include file="$(find burger_navigation)/launch/burger_navigation.launch">
++    <include file="$(find burger_navigation_seigot)/launch/burger_navigation.launch">
+       <arg name="robot_namespace" default="$(arg robot_namespace)"/>
+     </include>
+ 
+@@ -14,7 +14,7 @@
+       <param name="robot_name" value="$(arg side)" />
+     </node> -->
+ 
+-    <node pkg="burger_war" type="seigoRun2.py" name="seigoRun" output="screen">
++    <node pkg="burger_war_seigot" type="seigoRun2.py" name="seigoRun" output="screen">
+       <param name="robot_namespace" value="$(arg robot_namespace)" />
+       <param name="robot_name" value="$(arg side)" />
+       <!-- 何秒前までの敵検出結果を有効とするか -->
+@@ -29,10 +29,10 @@
+       <param name="attack_angle_th" value="0.785" />
+     </node>
+ 
+-    <include file="$(find burger_war)/launch/obstacle_detector.launch">
++    <include file="$(find burger_war_seigot)/launch/obstacle_detector.launch">
+       <arg name="robot_namespace" default="$(arg robot_namespace)"/>
+     </include>
+-    <node pkg="burger_war" type="enemy_detector.py" name="enemy_detector_node" output="screen">
++    <node pkg="burger_war_seigot" type="enemy_detector.py" name="enemy_detector_node" output="screen">
+       <param name="robot_namespace" value="$(arg robot_namespace)"/>
+     </node>
+     <!-- END sample program node -->
+diff --git a/burger_war/package.xml b/burger_war/package.xml
+index bf46832..18bb5a5 100644
+--- a/burger_war/package.xml
++++ b/burger_war/package.xml
+@@ -1,6 +1,6 @@
+ <?xml version="1.0"?>
+ <package>
+-  <name>burger_war</name>
++  <name>burger_war_seigot</name>
+   <version>0.0.0</version>
+   <description>The burger_war package</description>
+ 
+diff --git a/burger_war/scripts/seigoRun2.py b/burger_war/scripts/seigoRun2.py
+index d04cf86..d11df84 100755
+--- a/burger_war/scripts/seigoRun2.py
++++ b/burger_war/scripts/seigoRun2.py
+@@ -34,8 +34,10 @@ class SeigoBot2:
+     def __init__(self):
+ 
+         def load_waypoint():
++            current_dir=os.getcwd()
++            print("current_dir", current_dir)
+             path = os.environ['HOME'] + \
+-                '/catkin_ws/src/burger_war/burger_war/scripts/waypoints.csv'
++                '/catkin_ws/src/burger_war_seigot/burger_war/scripts/waypoints.csv'
+             return Waypoints(path)
+ 
+         self.listener = tf.TransformListener()
+diff --git a/scripts/start.sh b/scripts/start.sh
+index 7033255..1e73279 100644
+--- a/scripts/start.sh
++++ b/scripts/start.sh
+@@ -13,7 +13,7 @@ do
+ done
+ 
+ # set judge server state "running"
+-bash judge/test_scripts/set_running.sh localhost:5000
++#bash judge/test_scripts/set_running.sh localhost:5000
+ 
+ # launch robot control node
+-roslaunch burger_war sim_robot_run.launch enemy_level:=$VALUE_L
++roslaunch burger_war_seigot sim_robot_run.launch enemy_level:=$VALUE_L
