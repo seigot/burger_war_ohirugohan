@@ -6,10 +6,12 @@
 cd ~/catkin_ws/src
 git clone https://github.com/seigot/burger_war burger_war        # clone your repository
 git clone https://github.com/seigot/burger_war burger_war_seigot # clone this repository for enemy_bot
+git clone https://github.com/tysik/obstacle_detector.git         # if necessary
 cd burger_war_seigot
-patch -p1 < 20200822_change_namespace_to_enemy_bot.patch  # apply patch
+patch -p1 < autotest/patch/20200822_change_namespace_to_enemy_bot.patch  # apply patch
 cd ~/catkin_ws
-catkin build
+catkin build              # if necessary, delete old devel/build/log directory
+bash devel/setup.sh
 ```
 
 after build success. then...
