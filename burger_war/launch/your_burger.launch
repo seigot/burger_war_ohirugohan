@@ -1,12 +1,13 @@
 <?xml version="1.0"?>
 <launch>
   <arg name="side" default="r"/> <!-- "b" = blue side, "r" = red side  -->
-
+  <arg name="robot_namespace" default=""/>
     <!-- You can change control program  -->
 
     <!-- sample program node -->
 
     <include file="$(find burger_navigation)/launch/burger_navigation.launch">
+      <arg name="robot_namespace" default="$(arg robot_namespace)"/>
     </include>
 
     <!-- <node pkg="burger_war" type="seigoRun1.py" name="seigoRun" output="screen">
@@ -14,6 +15,7 @@
     </node> -->
 
     <node pkg="burger_war" type="seigoRun2.py" name="seigoRun" output="screen">
+      <param name="robot_namespace" value="$(arg robot_namespace)" />
       <param name="robot_name" value="$(arg side)" />
       <!-- 何秒前までの敵検出結果を有効とするか -->
       <param name="detect_enemy_time_tolerance" value="0.5" />
@@ -27,8 +29,12 @@
       <param name="attack_angle_th" value="0.785" />
     </node>
 
-    <include file="$(find burger_war)/launch/obstacle_detector.launch"/>
-    <node pkg="burger_war" type="enemy_detector.py" name="enemy_detector_node" output="screen"/>
+    <include file="$(find burger_war)/launch/obstacle_detector.launch">
+      <arg name="robot_namespace" default="$(arg robot_namespace)"/>
+    </include>
+    <node pkg="burger_war" type="enemy_detector.py" name="enemy_detector_node" output="screen">
+      <param name="robot_namespace" value="$(arg robot_namespace)"/>
+    </node>
     <!-- END sample program node -->
 
     <!-- End of your space  -->

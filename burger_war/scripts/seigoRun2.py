@@ -69,6 +69,7 @@ class SeigoBot2:
         self.send_goal(self.waypoint.get_current_waypoint())
 
     def get_rosparam(self):
+        self.robot_namespace = rospy.get_param('~robot_namespace')
         self.enemy_time_tolerance = rospy.get_param(
             'detect_enemy_time_tolerance', default=0.5)
         self.snipe_th = rospy.get_param('snipe_distance_th', default=0.8)
@@ -130,7 +131,9 @@ class SeigoBot2:
             if self.detect_counter < self.counter_th:
                 return False, 0.0, 0.0
 
-        trans, rot,  vaild = self.get_position_from_tf('map', 'base_link')
+        map_topic = self.robot_namespace+"/map"
+        baselink_topic= self.robot_namespace+"/base_link"
+        trans, rot,  vaild = self.get_position_from_tf(map_topic, baselink_topic)
         if vaild == False:
             return False, 0.0, 0.0
         dx = self.enemy_position.pose.pose.position.x - trans[0]
@@ -238,7 +241,7 @@ class SeigoBot2:
 
     def send_goal(self, point):
         goal = MoveBaseGoal()
-        goal.target_pose.header.frame_id = 'map'
+        goal.target_pose.header.frame_id = self.robot_namespace+"/map"
         goal.target_pose.pose.position.x = point[0]
         goal.target_pose.pose.position.y = point[1]
 
