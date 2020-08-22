@@ -2,9 +2,11 @@
 
 ### 20200822_change_namespace_to_enemy_bot.patch
 
+this patche is to work this repository as enemy_bot, on blue side in simulation environment.
+
 ```
 cd ~/catkin_ws/src
-rm -r burger_war*                                                # delete burger_war directory
+rm -r burger_war* obstacle_detector                              # delete old directory
 git clone https://github.com/seigot/burger_war burger_war        # clone your repository
 git clone https://github.com/seigot/burger_war burger_war_seigot # clone this repository for enemy_bot
 git clone https://github.com/tysik/obstacle_detector.git         # if necessary
