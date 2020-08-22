@@ -3,8 +3,7 @@
 ### 20200822_change_namespace_to_enemy_bot.patch
 
 this patche is to work this repository as enemy_bot, on blue side in simulation environment.
-- 以下のROS kinetic docker環境で動作検証実施
-  https://github.com/seigot/burger_war_docker_trial
+- 動作検証: ROS kinetic docker環境で実施 https://github.com/seigot/burger_war_docker_trial
 
 ```
 cd ~/catkin_ws/src
