@@ -3,6 +3,8 @@
 ### 20200822_change_namespace_to_enemy_bot.patch
 
 this patche is to work this repository as enemy_bot, on blue side in simulation environment.
+# 以下のROS kinetic docker環境で動作検証実施
+# https://github.com/seigot/burger_war_docker_trial
 
 ```
 cd ~/catkin_ws/src
@@ -13,7 +15,8 @@ git clone https://github.com/tysik/obstacle_detector.git         # if necessary
 cd burger_war_seigot
 patch -p1 < autotest/patch/20200822_change_namespace_to_enemy_bot.patch  # apply patch
 cd ~/catkin_ws
-catkin build              # if necessary, delete old devel/build/log directory
+catkin clean --yes   # if necessary, delete old devel/build/log directory
+catkin build
 bash devel/setup.sh
 ```
 
