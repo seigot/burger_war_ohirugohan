@@ -1,14 +1,14 @@
 <?xml version="1.0"?>
 <launch>
-  <arg name="side" default="r"/>
-  <!-- "b" = blue side, "r" = red side  -->
-
-  <!-- You can change control program  -->
+  <arg name="side" default="r"/> <!-- "b" = blue side, "r" = red side  -->
+  <arg name="robot_namespace" default=""/>
+    <!-- You can change control program  -->
 
   <!-- sample program node -->
 
-  <include file="$(find burger_navigation)/launch/burger_navigation.launch">
-  </include>
+    <include file="$(find burger_navigation)/launch/burger_navigation.launch">
+      <arg name="robot_namespace" default="$(arg robot_namespace)"/>
+    </include>
 
   <!-- <node pkg="burger_war" type="seigoRun1.py" name="seigoRun" output="screen">
       <param name="robot_name" value="$(arg side)" />

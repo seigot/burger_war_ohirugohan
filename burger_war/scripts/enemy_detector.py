@@ -21,10 +21,10 @@ class EnemyDetector:
         self.sub_obstacles   = rospy.Subscriber('obstacles', Obstacles, self.obstacles_callback)
         self.pub_robot2enemy = rospy.Publisher('robot2enemy', Float32, queue_size=10)
         self.pub_enemy_position = rospy.Publisher('enemy_position', Odometry, queue_size=10)
+        self.robot_namespace = rospy.get_param('~robot_namespace', '')
         self.robot_name      = rospy.get_param('~robot_name', '')
-
         self.enemy_pos = Odometry()
-        self.enemy_pos.header.frame_id = 'map'
+        self.enemy_pos.header.frame_id = self.robot_namespace+'/map'
         
     def obstacles_callback(self, msg):
 
@@ -42,14 +42,14 @@ class EnemyDetector:
                 continue
 
             #敵の座標をTFでbroadcast
-            enemy_frame_name = self.robot_name + '/enemy_' + str(num)
-            map_frame_name   = self.robot_name + "/map"
+            enemy_frame_name = self.robot_namespace + '/enemy_' + str(num)
+            map_frame_name   = self.robot_namespace + "/map"
             self.tf_broadcaster.sendTransform((temp_x,temp_y,0), (0,0,0,1), rospy.Time.now(), enemy_frame_name, map_frame_name)
 
             #ロボットから敵までの距離を計算
             try:
-                target_frame_name = self.robot_name + '/enemy_' + str(num)
-                source_frame_name = self.robot_name + "/base_footprint"
+                target_frame_name = self.robot_namespace + '/enemy_' + str(num)
+                source_frame_name = self.robot_namespace + "/base_footprint"
                 (trans,rot) = self.tf_listener.lookupTransform(source_frame_name, target_frame_name, rospy.Time(0))
             except (tf.LookupException, tf.ConnectivityException, tf.ExtrapolationException):
                 continue
@@ -64,8 +64,8 @@ class EnemyDetector:
         #敵を検出している場合、その座標と距離を出力
         if closest_enemy_len < sys.float_info.max:
 
-            map_frame_name   = self.robot_name + "/map"
-            enemy_frame_name = self.robot_name + "/enemy_closest"
+            map_frame_name   = self.robot_namespace + "/map"
+            enemy_frame_name = self.robot_namespace + "/enemy_closest"
             self.tf_broadcaster.sendTransform((closest_enemy_x,closest_enemy_y,0), (0,0,0,1), rospy.Time.now(), enemy_frame_name, map_frame_name)
             
             self.enemy_pos.header.stamp = rospy.Time.now()
