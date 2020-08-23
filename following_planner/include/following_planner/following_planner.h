@@ -14,8 +14,11 @@ namespace following_planner
   {
   public:
     FollowingPlannerROS();
-    // void initialize(std::string name, tf2_ros::Buffer *tf, costmap_2d::Costmap2DROS *costmap_ros);
+#if (ROS_VERSION_MINOR == 14)
+    void initialize(std::string name, tf2_ros::Buffer *tf, costmap_2d::Costmap2DROS *costmap_ros);
+#else
     void initialize(std::string name, tf::TransformListener *tf, costmap_2d::Costmap2DROS *costmap_ros);
+#endif
     ~FollowingPlannerROS();
     bool computeVelocityCommands(geometry_msgs::Twist &cmd_vel);
     bool setPlan(const std::vector<geometry_msgs::PoseStamped> &orig_global_plan);
@@ -42,7 +45,7 @@ namespace following_planner
 
     // tf2_ros::Buffer *tf_;
     tf2_ros::Buffer tf_;
-    tf2_ros::TransformListener* tf_listener_;
+    tf2_ros::TransformListener *tf_listener_;
     costmap_2d::Costmap2DROS *costmap_;
     std::vector<geometry_msgs::PoseStamped> global_plan_;
     geometry_msgs::PoseStamped robot_position_;
