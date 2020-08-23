@@ -69,6 +69,7 @@ class SeigoBot2:
         self.send_goal(self.waypoint.get_current_waypoint())
 
     def get_rosparam(self):
+        self.side = rospy.get_param('~side')   
         self.robot_namespace = rospy.get_param('~robot_namespace')
         self.enemy_time_tolerance = rospy.get_param(
             'detect_enemy_time_tolerance', default=0.5)

@@ -22,7 +22,6 @@ class EnemyDetector:
         self.pub_robot2enemy = rospy.Publisher('robot2enemy', Float32, queue_size=10)
         self.pub_enemy_position = rospy.Publisher('enemy_position', Odometry, queue_size=10)
         self.robot_namespace = rospy.get_param('~robot_namespace', '')
-        self.robot_name      = rospy.get_param('~robot_name', '')
         self.enemy_pos = Odometry()
         self.enemy_pos.header.frame_id = self.robot_namespace+'/map'
         

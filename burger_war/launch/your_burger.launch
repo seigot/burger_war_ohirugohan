@@ -15,6 +15,7 @@
     </node> -->
 
   <node pkg="burger_war" type="seigoRun2.py" name="seigoRun" output="screen">
+    <param name="side" value="$(arg side)" />
     <param name="robot_namespace" value="$(arg robot_namespace)" />
 
     <!-- 何秒前までの敵検出結果を有効とするか -->
@@ -33,8 +34,12 @@
     <param name="attack_angle_th" value="0.785" />
   </node>
 
-  <include file="$(find burger_war)/launch/obstacle_detector.launch"/>
-  <node pkg="burger_war" type="enemy_detector.py" name="enemy_detector_node" output="screen"/>
+  <include file="$(find burger_war)/launch/obstacle_detector.launch">
+    <arg name="robot_namespace" default="$(arg robot_namespace)"/>
+  </include>
+  <node pkg="burger_war" type="enemy_detector.py" name="enemy_detector_node" output="screen">
+    <param name="robot_namespace" value="$(arg robot_namespace)"/>
+  </node>
   <!-- END sample program node -->
 
   <!-- End of your space  -->
