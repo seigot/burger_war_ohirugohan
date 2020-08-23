@@ -12,6 +12,7 @@ git clone https://github.com/seigot/burger_war burger_war        # clone your re
 git clone https://github.com/seigot/burger_war burger_war_seigot # clone this repository for enemy_bot
 git clone https://github.com/tysik/obstacle_detector.git         # if necessary
 cd burger_war_seigot
+git checkout ecc49420838007be362b0df368fdbeb33dbe99c4            # if necessary
 patch -p1 < autotest/patch/20200822_change_namespace_to_enemy_bot.patch  # apply patch
 cd ~/catkin_ws
 catkin clean --yes   # if necessary, delete old devel/build/log directory
