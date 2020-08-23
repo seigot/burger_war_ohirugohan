@@ -25,7 +25,7 @@ after build success. then...
 ```
 cd ~/catkin_ws/src/burger_war
 bash scripts/sim_with_judge.sh
-bash scripts/start.sh -l 4           # your robot
+bash scripts/start.sh -l 0           # your robot
 cd ~/catkin_ws/src/burger_war_seigot
-bash scripts/start.sh -l 4           # enemy robot
+bash scripts/start.sh -l 0           # enemy robot
 ```
