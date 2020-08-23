@@ -5,6 +5,8 @@
 // #include <nav_core/parameter_magic.h>
 #include <pluginlib/class_list_macros.h>
 #include <tf/tf.h>
+#include <tf2_ros/buffer.h>
+#include <tf2_ros/transform_listener.h>
 
 PLUGINLIB_EXPORT_CLASS(following_planner::FollowingPlannerROS, nav_core::BaseLocalPlanner)
 
@@ -19,12 +21,18 @@ enum GoalStatus
 
 FollowingPlannerROS::FollowingPlannerROS()
 {
+  // tf2_ros::TransformListener tf_listener_;
 }
 
-void FollowingPlannerROS::initialize(std::string name, tf2_ros::Buffer *tf, costmap_2d::Costmap2DROS *costmap_ros)
+// void FollowingPlannerROS::initialize(std::string name, tf2_ros::Buffer *tf, costmap_2d::Costmap2DROS *costmap_ros)
+void FollowingPlannerROS::initialize(std::string name, tf::TransformListener *tf, costmap_2d::Costmap2DROS *costmap_ros)
 {
-  std::cout << ROS_VERSION << std::endl;
-  tf_ = tf;
+  std::cout << ROS_VERSION_MAJOR << std::endl;
+  // std::cout << ROS_VERSION_MINIMUM << std::endl;
+  std::cout << ROS_VERSION_MINOR << std::endl;
+  // tf_ = tf;
+  tf_listener_ = new tf2_ros::TransformListener(tf_);
+
   look_ahead_pub_ = nh_.advertise<geometry_msgs::PointStamped>("look_ahead", 1, true);
 
   status_ = GoalStatus::MOVING;
@@ -109,7 +117,8 @@ geometry_msgs::PoseStamped FollowingPlannerROS::getRobotPosition(std::string src
   try
   {
     // std::cout << "get tf" << std::endl;
-    tf_pose = tf_->lookupTransform(target_frame, src_frame, ros::Time(0));
+    // tf_pose = tf_->lookupTransform(target_frame, src_frame, ros::Time(0));
+    tf_pose = tf_.lookupTransform(target_frame, src_frame, ros::Time(0));
   }
   catch (tf2::TransformException &ex)
   {
