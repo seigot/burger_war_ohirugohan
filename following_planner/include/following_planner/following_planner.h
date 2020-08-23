@@ -50,6 +50,8 @@ private:
   int status_;
 
   bool initialized_;
+
+  std::string robot_frame_, map_frame_;
 };
 
 }  // namespace following_planner

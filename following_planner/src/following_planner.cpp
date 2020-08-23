@@ -2,7 +2,7 @@
 #include <angles/angles.h>
 #include <following_planner/following_planner.h>
 #include <geometry_msgs/Quaternion.h>
-#include <nav_core/parameter_magic.h>
+// #include <nav_core/parameter_magic.h>
 #include <pluginlib/class_list_macros.h>
 #include <tf/tf.h>
 
@@ -23,11 +23,14 @@ FollowingPlannerROS::FollowingPlannerROS()
 
 void FollowingPlannerROS::initialize(std::string name, tf2_ros::Buffer *tf, costmap_2d::Costmap2DROS *costmap_ros)
 {
+  std::cout << ROS_VERSION << std::endl;
   tf_ = tf;
   look_ahead_pub_ = nh_.advertise<geometry_msgs::PointStamped>("look_ahead", 1, true);
 
   status_ = GoalStatus::MOVING;
   getRosparam();
+  robot_frame_ = "base_footprint";
+  map_frame_ = "map";
 }
 
 void FollowingPlannerROS::getRosparam()
@@ -55,7 +58,7 @@ bool FollowingPlannerROS::setPlan(const std::vector<geometry_msgs::PoseStamped> 
 
 bool FollowingPlannerROS::isGoalReached()
 {
-  geometry_msgs::PoseStamped robot_position_ = getRobotPosition("base_footprint", "map");
+  geometry_msgs::PoseStamped robot_position_ = getRobotPosition(robot_frame_, map_frame_);
   geometry_msgs::PoseStamped goal = global_plan_[global_plan_.size() - 1];
   //   std::cout << "get goal" << std::endl;
   double xy, yaw;
@@ -129,7 +132,7 @@ bool FollowingPlannerROS::computeVelocityCommands(geometry_msgs::Twist &cmd_vel)
   //   std::cout << "computeVelocityCommands" << std::endl;
   if (status_ == GoalStatus::MOVING)
   {
-    geometry_msgs::PoseStamped self_position = getRobotPosition("base_footprint", "map");
+    geometry_msgs::PoseStamped self_position = getRobotPosition(robot_frame_, map_frame_);
     geometry_msgs::PoseStamped look_ahead = computeLookAheadPoint(self_position);
 
     cmd_vel = computePurePursuit(look_ahead.pose.position, self_position, vx_);
@@ -144,7 +147,7 @@ bool FollowingPlannerROS::computeVelocityCommands(geometry_msgs::Twist &cmd_vel)
   else if (status_ == GoalStatus::ROTATING)
   {
     cmd_vel.linear.x = 0.0;
-    geometry_msgs::PoseStamped self_position = getRobotPosition("base_footprint", "map");
+    geometry_msgs::PoseStamped self_position = getRobotPosition(robot_frame_, map_frame_);
     cmd_vel.angular.z = setAttitude(self_position, global_plan_[global_plan_.size() - 1]);
     return true;
   }
@@ -231,7 +234,7 @@ geometry_msgs::Twist FollowingPlannerROS::computePurePursuit(geometry_msgs::Poin
   {
     ROS_INFO("spin turn");
     geometry_msgs::PoseStamped target;
-    target.header.frame_id = "map";
+    target.header.frame_id = map_frame_;
     target.pose.position = look_ahead;
     GetQuaternionMsg(0.0, 0.0, to_look_ahead, target.pose.orientation);
     cmd_vel.linear.x = 0.0;
