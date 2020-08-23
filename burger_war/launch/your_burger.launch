@@ -15,7 +15,7 @@
     </node> -->
 
   <node pkg="burger_war" type="seigoRun2.py" name="seigoRun" output="screen">
-    <param name="robot_name" value="$(arg side)" />
+    <param name="robot_namespace" value="$(arg robot_namespace)" />
 
     <!-- 何秒前までの敵検出結果を有効とするか -->
     <param name="detect_enemy_time_tolerance" value="0.5" />
