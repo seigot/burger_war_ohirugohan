@@ -59,6 +59,7 @@
   <!-- move_base -->
   <node pkg="move_base" type="move_base" respawn="false" name="move_base" output="screen">
     <param name="base_local_planner" value="dwa_local_planner/DWAPlannerROS" />
+    <!-- <param name="base_local_planner" value="following_planner/FollowingPlannerROS" /> -->
     <param name="base_global_planner" value="global_planner/GlobalPlanner" />
     <rosparam file="$(find burger_navigation)/param/costmap_common_params_burger.yaml" command="load" ns="global_costmap" />
     <rosparam file="$(find burger_navigation)/param/costmap_common_params_burger.yaml" command="load" ns="local_costmap" />
@@ -66,6 +67,7 @@
     <rosparam file="$(find burger_navigation)/param/global_costmap_params.yaml" command="load" />
     <rosparam file="$(find burger_navigation)/param/move_base_params.yaml" command="load" />
     <rosparam file="$(find burger_navigation)/param/dwa_local_planner_params_burger.yaml" command="load" />
+    <rosparam file="$(find burger_navigation)/param/follow_planner.yaml" command="load" />
     <rosparam file="$(find burger_navigation)/param/global_planner_params_burger.yaml" command="load" />
     <remap from="cmd_vel" to="$(arg cmd_vel_topic)"/>
     <remap from="odom" to="$(arg odom_topic)"/>
