@@ -134,6 +134,7 @@ def main():
     cheese = fight_result()
     teriyaki = fight_result()
     clubhouse = fight_result()
+    enemylevel4 = fight_result()
 
     for line in data[2:-1]:
         if 'commit' in line:
@@ -141,6 +142,7 @@ def main():
             cheese.set_commit_seq()
             teriyaki.set_commit_seq()
             clubhouse.set_commit_seq()
+            enemylevel4.set_commit_seq()
             continue
 
         result = line.split(',')
@@ -154,43 +156,52 @@ def main():
             teriyaki.add_score(float(result[4]), float(result[5]))
         elif int(result[1]) == 3:
             clubhouse.add_score(float(result[4]), float(result[5]))
+        elif int(result[1]) == 4:
+            enemylevel4.add_score(float(result[4]), float(result[5]))
         else:
             print('unknown enemy')
             continue
 
     print('-------------------------------------------------------------')
-    print('              vs cheese    vs teriyaki    vs clubhouse')
+    print('              vs cheese    vs teriyaki    vs clubhouse    vs enemylevel4')
     print('winning rate: '+'{:.2f}'.format(cheese.winning_rate()).rjust(len('vs cheese'))+'    '
           + '{:.2f}'.format(teriyaki.winning_rate()
                             ).rjust(len('vs teriyaki'))+'    '
-          + '{:.2f}'.format(clubhouse.winning_rate()).rjust(len('vs clubhouse')))
-
+          + '{:.2f}'.format(clubhouse.winning_rate()).rjust(len('vs clubhouse'))+'    '
+          + '{:.2f}'.format(enemylevel4.winning_rate()).rjust(len('vs enemylevel4')))
     print('onekill win : '+'{:.2f}'.format(cheese.onekillwin_rate()).rjust(len('vs cheese'))+'    '
           + '{:.2f}'.format(teriyaki.onekillwin_rate()
                             ).rjust(len('vs teriyaki'))+'    '
-          + '{:.2f}'.format(clubhouse.onekillwin_rate()).rjust(len('vs clubhouse')))
+          + '{:.2f}'.format(clubhouse.onekillwin_rate()).rjust(len('vs clubhouse'))+'    '
+          + '{:.2f}'.format(enemylevel4.onekillwin_rate()).rjust(len('vs enemylevel4')))
 
     print('onekill lose: '+'{:.2f}'.format(cheese.onekilllose_rate()).rjust(len('vs cheese'))+'    '
           + '{:.2f}'.format(teriyaki.onekilllose_rate()
                             ).rjust(len('vs teriyaki'))+'    '
-          + '{:.2f}'.format(clubhouse.onekilllose_rate()).rjust(len('vs clubhouse')))
+          + '{:.2f}'.format(clubhouse.onekilllose_rate()).rjust(len('vs clubhouse'))+'    '
+          + '{:.2f}'.format(enemylevel4.onekilllose_rate()).rjust(len('vs enemylevel4')))
 
     print('my_score:     '+'{:.2f}'.format(cheese.my_average()).rjust(len('vs cheese'))+'    '
           + '{:.2f}'.format(teriyaki.my_average()
                             ).rjust(len('vs teriyaki'))+'    '
-          + '{:.2f}'.format(clubhouse.my_average()).rjust(len('vs clubhouse')))
+          + '{:.2f}'.format(clubhouse.my_average()).rjust(len('vs clubhouse'))+'    '
+          + '{:.2f}'.format(enemylevel4.my_average()).rjust(len('vs enemylevel4')))
 
     print('enemy_score:  '+'{:.2f}'.format(cheese.enemy_average()).rjust(len('vs cheese'))+'    '
           + '{:.2f}'.format(teriyaki.enemy_average()
                             ).rjust(len('vs teriyaki'))+'    '
-          + '{:.2f}'.format(clubhouse.enemy_average()).rjust(len('vs clubhouse')))
+          + '{:.2f}'.format(clubhouse.enemy_average()).rjust(len('vs clubhouse'))+'    '
+          + '{:.2f}'.format(enemylevel4.enemy_average()).rjust(len('vs enemylevel4')))
     print('\nnumber of games: '+str(len(cheese.result)))
 
     total_winning_rate=cheese.winning_rate()*teriyaki.winning_rate()*clubhouse.winning_rate()
+    total_onekill_rate=cheese.onekillwin_rate()*teriyaki.onekillwin_rate()*clubhouse.onekillwin_rate()
     my_score_total=cheese.my_average()+teriyaki.my_average()+clubhouse.my_average()
     enemy_score_total=cheese.enemy_average()+teriyaki.enemy_average()*clubhouse.enemy_average()
 
+    print('--- for qualifying rounds (vs cheese,teriyaki,clubhouse) ---  ')
     print('total_winning_rate   :  '+'{:.2f}'.format(total_winning_rate))
+    print('total_onekill_rate   :  '+'{:.2f}'.format(total_onekill_rate))
     print('total_score(my)      :  '+'{:.2f}'.format(my_score_total))
     print('total_score(enemy)   :  '+'{:.2f}'.format(enemy_score_total))
     print('total_score(my-enemy):  '+'{:.2f}'.format(my_score_total-enemy_score_total))
