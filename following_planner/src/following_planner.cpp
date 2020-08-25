@@ -284,7 +284,7 @@ namespace following_planner
 
     if (std::abs(sin_val) < DBL_EPSILON)
     {
-      ROS_WARN_STREAM("zero division. yaw diff is too small");
+      ROS_WARN_STREAM("yaw diff is too small");
       cmd_vel.linear.x = vx;
       cmd_vel.angular.z = 0;
       return cmd_vel;
@@ -312,7 +312,12 @@ namespace following_planner
     GetRPY(target.pose, roll, pitch, yaw2);
     //   std::cout << self_position.header.frame_id << ", " << global_plan_.end()->header.frame_id << std::endl;
     double angle_diff = angles::normalize_angle(yaw1 - yaw2);
-    return -1 * ((angle_diff > 0) - (angle_diff < 0)) * vw_;
+    double vw = vw_;
+    if (std::abs(angle_diff) < 30 * M_PI / 180)
+    {
+      vw = std::abs(angle_diff)*2.0;
+    }
+    return -1 * ((angle_diff > 0) - (angle_diff < 0)) * vw;
   }
 
   void FollowingPlannerROS::GetQuaternionMsg(double roll, double pitch, double yaw, geometry_msgs::Quaternion &q)
