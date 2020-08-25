@@ -231,13 +231,13 @@ class SeigoBot2:
             rospy.loginfo(text)
 
     def basic(self):
-        vaild, vx = self.recovery()  # ぶつかってないか確認
-        if vaild == True:
-            self.cancel_goal()
-            cmd_vel = Twist()
-            cmd_vel.linear.x = vx
-            self.direct_twist_pub.publish(cmd_vel)
-            return
+        # vaild, vx = self.recovery()  # ぶつかってないか確認
+        # if vaild == True:
+        #     self.cancel_goal()
+        #     cmd_vel = Twist()
+        #     cmd_vel.linear.x = vx
+        #     self.direct_twist_pub.publish(cmd_vel)
+        #     return
 
         pre_status = self.status
         self.status = self.move_base_client.get_state()
@@ -250,7 +250,8 @@ class SeigoBot2:
             point = self.waypoint.get_next_waypoint()
             self.send_goal(point)
         elif self.status == actionlib.GoalStatus.ABORTED:
-            self.recovery()
+            cmd_vel = Twist()
+            cmd_vel.liner.x = self.recovery()
         elif self.status == actionlib.GoalStatus.PENDING:
             self.send_goal(self.waypoint.get_current_waypoint())
         elif self.status == actionlib.GoalStatus.PREEMPTING or self.status == actionlib.GoalStatus.PREEMPTED:
