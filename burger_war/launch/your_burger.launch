@@ -9,12 +9,14 @@
     <include file="$(find burger_navigation)/launch/burger_navigation.launch">
       <arg name="robot_namespace" default="$(arg robot_namespace)"/>
 
-      <!--  -->
+      <!--  カクついたらここをコメント解除　-->
       <!-- <arg name="cmd_vel_topic" value="/move_base/cmd_vel"/> -->
     </include>
 
-<!--  -->
+      <!--  カクついたらここをコメント解除　-->
     <!-- <node pkg="burger_war" type="cmd_smoother.py" name="cmd_smoother" output="screen"/> -->
+
+
 
   <!-- <node pkg="burger_war" type="seigoRun1.py" name="seigoRun" output="screen">
       <param name="robot_name" value="$(arg side)" />
