@@ -69,7 +69,7 @@ class SeigoBot2:
         self.send_goal(self.waypoint.get_current_waypoint())
 
     def get_rosparam(self):
-        self.side = rospy.get_param('~side')   
+        self.side = rospy.get_param('~side')
         self.robot_namespace = rospy.get_param('~robot_namespace')
         self.enemy_time_tolerance = rospy.get_param(
             'detect_enemy_time_tolerance', default=0.5)
@@ -116,10 +116,10 @@ class SeigoBot2:
         exist, distance, direction_diff = self.detect_from_lidar()
         # もしカメラで確認できる範囲なら
 
-        if abs(direction_diff) < self.camera_angle_limit and distance > self.camera_range_limit[0] and distance < self.camera_range_limit[1]:
-            exist = exist and self.is_camera_detect  # カメラとLidarのandをとる
-            if exist == False:
-                rospy.loginfo('detect enemy from LiDAR, but cannot detect from camera. So ignore')
+        # if abs(direction_diff) < self.camera_angle_limit and distance > self.camera_range_limit[0] and distance < self.camera_range_limit[1]:
+        #     exist = exist and self.is_camera_detect  # カメラとLidarのandをとる
+        #     if exist == False:
+        #         rospy.loginfo('detect enemy from LiDAR, but cannot detect from camera. So ignore')
         return exist, distance, direction_diff
 
     def detect_from_lidar(self):
@@ -133,8 +133,9 @@ class SeigoBot2:
                 return False, 0.0, 0.0
 
         map_topic = self.robot_namespace+"/map"
-        baselink_topic= self.robot_namespace+"/base_link"
-        trans, rot,  vaild = self.get_position_from_tf(map_topic, baselink_topic)
+        baselink_topic = self.robot_namespace+"/base_link"
+        trans, rot,  vaild = self.get_position_from_tf(
+            map_topic, baselink_topic)
         if vaild == False:
             return False, 0.0, 0.0
         dx = self.enemy_position.pose.pose.position.x - trans[0]
@@ -160,18 +161,35 @@ class SeigoBot2:
             else:
                 self.is_camera_detect = False
                 self.camera_detect_angle = -360
-        
 
     # RESPECT @koy_tak
     def detect_collision(self):
         front = False
         rear = False
-        if (self.scan.ranges[0] != 0 and self.scan.ranges[0] < self.distance_to_wall_th) or (self.scan.ranges[10] != 0 and self.scan.ranges[10] < self.distance_to_wall_th) or (self.scan.ranges[350] != 0 and self.scan.ranges[350] < self.distance_to_wall_th):
-            rospy.logwarn('front collision !!')
+        deg_90 = int((math.pi/2.0)/self.scan.angle_increment)
+
+        front_count = len([i for i in self.scan.ranges[0:int(deg_90)] if i < self.distance_to_wall_th]) + \
+            len([i for i in self.scan.ranges[int(deg_90)*3:-1]
+                 if i < self.distance_to_wall_th])
+        rear_count = len([i for i in self.scan.ranges[int(
+            deg_90):int(deg_90)*3] if i < self.distance_to_wall_th])
+        if front_count > 0 and rear_count == 0:
             front = True
-        if (self.scan.ranges[180] != 0 and self.scan.ranges[180] < self.distance_to_wall_th) or (self.scan.ranges[190] != 0 and self.scan.ranges[190] < self.distance_to_wall_th) or (self.scan.ranges[170] != 0 and self.scan.ranges[170] < self.distance_to_wall_th):
-            rospy.logwarn('rear collision !!')
-            rear = True
+            rospy.logwarn("front collision !!!")
+        elif front_count == 0 and rear_count > 0:
+            rear = False
+            rospy.logwarn("rear collision !!!")
+        elif front_count > 0 and rear_count > 0:
+            front = front_count > rear_count
+            rear = not front
+            rospy.logwarn("both side collision !!!")
+
+        # if (self.scan.ranges[0] != 0 and self.scan.ranges[0] < self.distance_to_wall_th) or (self.scan.ranges[10] != 0 and self.scan.ranges[10] < self.distance_to_wall_th) or (self.scan.ranges[350] != 0 and self.scan.ranges[350] < self.distance_to_wall_th):
+        #     rospy.logwarn('front collision !!')
+        #     front = True
+        # if (self.scan.ranges[180] != 0 and self.scan.ranges[180] < self.distance_to_wall_th) or (self.scan.ranges[190] != 0 and self.scan.ranges[190] < self.distance_to_wall_th) or (self.scan.ranges[170] != 0 and self.scan.ranges[170] < self.distance_to_wall_th):
+        #     rospy.logwarn('rear collision !!')
+        #     rear = True
         return front, rear
 
     # ここで状態決定　
