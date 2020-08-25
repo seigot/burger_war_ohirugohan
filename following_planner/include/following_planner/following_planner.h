@@ -56,6 +56,7 @@ namespace following_planner
     double look_ahead_distance_;
     double vx_, vx_slow_, vw_max_, vw_;
     double slow_range_;
+    double rotate_angle_th_;
 
     int status_;
 
