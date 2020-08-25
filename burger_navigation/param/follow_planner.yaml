@@ -10,3 +10,4 @@ FollowPlannerROS:
   vw_max: 2.75              # 角速度最大値
   vw_: 1.57                 # その場回転するときの角速度
   slow_range: 0.1           # ゴール付近で減速する時のゴールからの距離しきい値
+  rotate_angle_th: 30       # [deg]

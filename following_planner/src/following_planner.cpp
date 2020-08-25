@@ -54,6 +54,7 @@ namespace following_planner
     nh_.param<double>("vw_max", vw_max_, 2.75);
     nh_.param<double>("vw_", vw_, 1.57);
     nh_.param<double>("slow_range", slow_range_, 0.1);
+    nh_.param<double>("rotate_angle_th", rotate_angle_th_, 30);
   }
 
   FollowingPlannerROS::~FollowingPlannerROS()
@@ -230,12 +231,12 @@ namespace following_planner
     std::cout << direction_diff << std::endl;
     geometry_msgs::Twist cmd_vel;
     double direction = 1;
-    if (std::abs(direction_diff) < 45 * M_PI / 180)
+    if (std::abs(direction_diff) < rotate_angle_th_ * M_PI / 180)
     {
       ROS_INFO("move forward");
       direction = 1;
     }
-    else if (std::abs(direction_diff) > 135 * M_PI / 180)
+    else if (std::abs(direction_diff) > (180 - rotate_angle_th_) * M_PI / 180)
     {
       ROS_INFO("move backwaord");
       direction = -1;
@@ -248,8 +249,24 @@ namespace following_planner
       target.header.frame_id = map_frame_;
       target.pose.position = look_ahead;
       GetQuaternionMsg(0.0, 0.0, to_look_ahead, target.pose.orientation);
+      std::cout << direction_diff * 180 / M_PI << std::endl;
+      if (std::abs(direction_diff) >= 90 * M_PI / 180)
+      {
+        std::cout << "adjust backward" << std::endl;
+        geometry_msgs::PoseStamped self_position_dummy = self_position;
+        double roll, pitch, yaw;
+        GetRPY(self_position.pose, roll, pitch, yaw);
+        yaw = angles::normalize_angle(yaw - M_PI);
+        GetQuaternionMsg(0.0, 0.0, yaw, self_position_dummy.pose.orientation);
+        cmd_vel.angular.z = setAttitude(self_position_dummy, target);
+        // std::cout << cmd_vel.angular.z << "[rad/s]" << std::endl;
+      }
+      else
+      {
+        cmd_vel.angular.z = setAttitude(self_position, target);
+      }
       cmd_vel.linear.x = 0.0;
-      cmd_vel.angular.z = setAttitude(self_position, target);
+      return cmd_vel;
     }
 
     double sin_val = std::sin(direction_diff);
@@ -264,7 +281,7 @@ namespace following_planner
 
     if (std::abs(sin_val) < DBL_EPSILON)
     {
-      ROS_WARN_STREAM("yaw diff is too small");
+      ROS_WARN_STREAM("zero division. yaw diff is too small");
       cmd_vel.linear.x = vx;
       cmd_vel.angular.z = 0;
       return cmd_vel;
@@ -291,7 +308,6 @@ namespace following_planner
     GetRPY(self_position.pose, roll, pitch, yaw1);
     GetRPY(target.pose, roll, pitch, yaw2);
     //   std::cout << self_position.header.frame_id << ", " << global_plan_.end()->header.frame_id << std::endl;
-    //   std::cout << yaw1 * 180 / M_PI << ", " << yaw2 * 180 / M_PI << std::endl;
     double angle_diff = angles::normalize_angle(yaw1 - yaw2);
     return -1 * ((angle_diff > 0) - (angle_diff < 0)) * vw_;
   }
