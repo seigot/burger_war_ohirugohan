@@ -42,10 +42,12 @@ namespace following_planner
     // member
     ros::NodeHandle nh_;
     ros::Publisher look_ahead_pub_;
-
-    // tf2_ros::Buffer *tf_;
+#if (ROS_VERSION_MINOR == 14)
+    tf2_ros::Buffer* tf_;
+#else
     tf2_ros::Buffer tf_;
     tf2_ros::TransformListener *tf_listener_;
+#endif
     costmap_2d::Costmap2DROS *costmap_;
     std::vector<geometry_msgs::PoseStamped> global_plan_;
     geometry_msgs::PoseStamped robot_position_;

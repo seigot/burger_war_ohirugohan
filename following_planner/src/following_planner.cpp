@@ -119,8 +119,11 @@ namespace following_planner
     try
     {
       // std::cout << "get tf" << std::endl;
-      // tf_pose = tf_->lookupTransform(target_frame, src_frame, ros::Time(0));
+#if (ROS_VERSION_MINOR == 14)
+      tf_pose = tf_->lookupTransform(target_frame, src_frame, ros::Time(0));
+#else
       tf_pose = tf_.lookupTransform(target_frame, src_frame, ros::Time(0));
+#endif
     }
     catch (tf2::TransformException &ex)
     {
