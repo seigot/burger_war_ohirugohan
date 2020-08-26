@@ -38,6 +38,14 @@
 	<arg name="side" value="b" />
       </include>  
     </group>
+
+    <!-- level 5 (if you want to run , set launch arg enemy_level=5 --> 
+    <group if="$(eval enemy_level==5)"> 
+      <include file="$(find burger_war_level5)/launch/your_burger.launch">
+        <arg name="robot_namespace" value="enemy_bot" />
+	<arg name="side" value="b" />
+      </include>  
+    </group>
   </group>
 
 </launch>
