@@ -251,7 +251,7 @@ class SeigoBot2:
             self.send_goal(point)
         elif self.status == actionlib.GoalStatus.ABORTED:
             cmd_vel = Twist()
-            cmd_vel.liner.x = self.recovery()
+            cmd_vel.linear.x = self.recovery()
         elif self.status == actionlib.GoalStatus.PENDING:
             self.send_goal(self.waypoint.get_current_waypoint())
         elif self.status == actionlib.GoalStatus.PREEMPTING or self.status == actionlib.GoalStatus.PREEMPTED:
