@@ -247,11 +247,14 @@ class SeigoBot2:
         if self.status == actionlib.GoalStatus.ACTIVE:
             pass
         elif self.status == actionlib.GoalStatus.SUCCEEDED:
+            # 早すぎてマーカー取れなかったらここでsleep
             point = self.waypoint.get_next_waypoint()
             self.send_goal(point)
         elif self.status == actionlib.GoalStatus.ABORTED:
             cmd_vel = Twist()
-            cmd_vel.linear.x = self.recovery()
+            valid, cmd_vel.linear.x = self.recovery()
+            self.direct_twist_pub.publish(cmd_vel)
+            # 必要ならsleep
         elif self.status == actionlib.GoalStatus.PENDING:
             self.send_goal(self.waypoint.get_current_waypoint())
         elif self.status == actionlib.GoalStatus.PREEMPTING or self.status == actionlib.GoalStatus.PREEMPTED:
