@@ -17,3 +17,8 @@
   # RESPECT raucha
   https://github.com/raucha/burger_war
   latest commit eb312bbaa41e834f53c918dbaf125db4265967f6
+
+- enemy_bot_level8
+  # RESPECT Gantetsu
+  https://github.com/Gantetsu-robocon/burger_war
+  latest commit 975fbc89a46bbbab0484797f901f03c9d0204b57
