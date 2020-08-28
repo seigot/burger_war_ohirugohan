@@ -11,6 +11,16 @@ cd $HOME/catkin_ws
 catkin build
 
 # 本リポジトリのビルド手順
-cd $HOME/catkin_ws
+mkdir $HOME/catkin_ws/src
+cd $HOME/catkin_ws/src
+git clone https://github.com/seigot/burger_war
+git clone https://github.com/tysik/obstacle_detector.git
 sudo rm -r build devel log 
 catkin build
+bash devel/setup.sh
+
+# how to start
+cd $HOME/catkin_ws/src/burger_war
+bash scripts/sim_with_judge.sh
+bash scripts/start.sh -l 1
+
