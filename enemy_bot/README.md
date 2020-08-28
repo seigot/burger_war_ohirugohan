@@ -13,3 +13,7 @@
   https://github.com/sugarman1983/burger_war
   latest commit 44bbe2555834457ddd9f183e98ac707b06d430ed
 
+- enemy_bot_level7
+  # RESPECT raucha
+  https://github.com/raucha/burger_war
+  latest commit eb312bbaa41e834f53c918dbaf125db4265967f6
