@@ -39,8 +39,8 @@ class ActMode(Enum):
 #      7            9
 # [zone2] 16    15 [zone4]
 #      10           12
-#            13
-#      17  [zone1]  11
+#            17
+#      11  [zone1]  13
 # ----------------------------------------
 #        Back 0                  Back 3
 #   R 2[enemy_bot(b)]L 1   R 5[my_bot(r)]L 4

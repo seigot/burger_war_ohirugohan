@@ -20,6 +20,7 @@ class Waypoints:
         with open(path) as f:
             lines = csv.reader(f)
             for l in lines:
+                # x,y,radian,target_idx(refer main code)
                 point = [float(n) for n in l]
                 point[2] = point[2]*math.pi/180.0
                 point[3] = int(point[3])
@@ -31,11 +32,20 @@ class Waypoints:
             self.Waypoints_Lap = self.Waypoints_Lap+1
             self.number = 0          
 
-        # check if already get next target
-        self.next_target_idx = self.points[self.number][3]
-        if self.all_field_score[self.next_target_idx] == 0:
-            print("already get next_target")
-        
+        # check if better target to get score.
+        self.better_number = self.number
+        for i in range(len(self.points)):
+            # check next target status
+            self.next_target_idx = self.points[self.better_number][3]
+            if self.all_field_score[self.next_target_idx] != 0:
+                print("better target to get score", self.number)
+                self.number = self.better_number
+                break
+
+            self.better_number = self.better_number+1
+            if self.better_number == len(self.points):
+                self.better_number = 0
+
         return self.points[self.number][0:3]
 
     def get_current_waypoint(self):
