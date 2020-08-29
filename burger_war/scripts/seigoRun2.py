@@ -9,6 +9,7 @@ import math
 import os
 import cv2
 import numpy as np
+import requests
 
 import rospy
 import tf
@@ -29,7 +30,42 @@ class ActMode(Enum):
     ESCAPE = 3
     DEFENCE = 4
 
-
+# --- zone definition (r), refer http://localhost:5000/warstate ---
+# the number means index of warstate json file.
+# the target state is stored in bot_side_score,field_score param (0:no one,1:mybot,2:enemy)
+#
+#      6   [zone3]  8
+#            14
+#      7            9
+# [zone2] 16    15 [zone4]
+#      10           12
+#            13
+#      17  [zone1]  11
+# ----------------------------------------
+#        Back 0                  Back 3
+#   R 2[enemy_bot(b)]L 1   R 5[my_bot(r)]L 4
+#        Front                   Front
+# ----------------------------------------
+target_idx_r = np.array([
+    [ 13, 17, 11], # zone1
+    [ 10, 16,  7], # zone2
+    [  6, 14,  8], # zone3
+    [  9, 15, 12]  # zone4
+])
+target_idx_b = np.array([
+    [  6, 14,  8], # zone1
+    [  9, 15, 12], # zone2
+    [ 13, 17, 11], # zone3
+    [ 10, 16,  7]  # zone4
+])
+bot_side_target_idx_r = np.array([
+    [ 3, 4, 5], # my_bot is red side
+    [ 0, 1, 2], # enemy_bot
+])
+bot_side_target_idx_b = np.array([
+    [ 0, 1, 2], # my_bot is blue side
+    [ 3, 4, 5], # enemt_bot
+])
 class SeigoBot2:
 
     def __init__(self):
@@ -62,6 +98,17 @@ class SeigoBot2:
         self.is_camera_detect = False
         self.camera_detect_angle = -360
 
+        rospy.Timer(rospy.Duration(0.1), self.WarState_timerCallback)
+        self.my_score = 0
+        self.enemy_score = 0
+        self.Is_lowwer_score = False
+        self.bot_side_score = np.array([[1,1,1],[1,1,1]]) # bot_side score state (mybot,enemybot)
+        self.field_score = np.array([[1,1,1],[1,1,1],[1,1,1],[1,1,1]]) # field score state, zone1-4
+	self.field_score_prev = np.array([[1,1,1],[1,1,1],[1,1,1],[1,1,1]]) # field score state (previous)
+        self.enemy_zone = -1
+	self.enemy_target = -1
+	self.enemy_stamp = rospy.Time.now()
+
         self.direct_twist_pub = rospy.Publisher('cmd_vel', Twist, queue_size=1)
 
         rospy.Subscriber
@@ -72,7 +119,7 @@ class SeigoBot2:
         self.send_goal(self.waypoint.get_current_waypoint())
 
     def get_rosparam(self):
-        self.side = rospy.get_param('~side')
+        self.my_side = rospy.get_param('~side')
         self.robot_namespace = rospy.get_param('~robot_namespace')
         self.enemy_time_tolerance = rospy.get_param(
             'detect_enemy_time_tolerance', default=0.5)
@@ -88,6 +135,7 @@ class SeigoBot2:
             'camera_range_limit', default=[0.2, 0.5])
         self.camera_angle_limit = rospy.get_param(
             'camera_angle_limit', default=30)*math.pi/180
+        self.JUDGE_URL = rospy.get_param('/send_id_to_judge/judge_url')
 
     def imageCallback(self, data):
         self.detect_from_camera(data)
@@ -188,6 +236,79 @@ class SeigoBot2:
         #     rospy.logwarn('rear collision !!')
         #     rear = True
         return front, rear
+
+    # RESPECT @F0CACC1A
+    def WarState_timerCallback(self, state):
+        self.getWarState()
+
+    def getWarState(self):
+        # get current state from judge server
+	resp = requests.get(self.JUDGE_URL + "/warState")
+	dic = resp.json()
+        # get score
+        if self.my_side == "r": # red_bot
+            self.my_score = int(dic["scores"]["r"])
+            self.enemy_score = int(dic["scores"]["b"])
+        else: # blue_bot
+            self.my_score = int(dic["scores"]["b"])
+            self.enemy_score = int(dic["scores"]["r"])
+
+        # get bot side target state
+	for bot_side in range(2): # 0:mybot,1:enemybot
+	    for target in range(3): # 0:Back,1:L,2:R
+		if self.my_side == "r":
+		    bot_side_target_idx = bot_side_target_idx_r[bot_side][target]
+		else:
+		    bot_side_target_idx = bot_side_target_idx_b[zone][target]
+		target_state = dic["targets"][bot_side_target_idx]["player"]
+
+		if target_state == "n":
+		    self.bot_side_score[bot_side][target] = 1 # no one get this target
+		elif target_state == self.my_side:
+		    self.bot_side_score[bot_side][target] = 0 # my_bot get this target
+		else:
+		    self.bot_side_score[bot_side][target] = 2 # enemy get this target
+
+        # get field target state
+	for zone in range(4):
+	    for target in range(3):
+		if self.my_side == "r":
+		    target_idx = target_idx_r[zone][target]
+		else:
+		    target_idx = target_idx_b[zone][target]
+
+		target_state = dic["targets"][target_idx]["player"]
+
+		self.field_score_prev[zone][target] = self.field_score[zone][target]
+		if target_state == "n":
+		    self.field_score[zone][target] = 1 # no one get this target
+		elif target_state == self.my_side:
+		    self.field_score[zone][target] = 0 # my_bot get this target
+		else:
+		    self.field_score[zone][target] = 2 # enemy get this target
+		    if self.field_score_prev[zone][target] < 2:
+                        # When the enemy get a marker, save enemy state.
+			self.enemy_zone = zone
+			self.enemy_target = target
+			self.enemy_stamp = rospy.Time.now()
+			#print "#",
+
+        # for print debug
+        # [myside] | [enemyside] | [zone1] | [zone2] | [zone3] | [zone4]
+        # for bot_side in range(2):
+	#    for target in range(3):
+	#        print self.bot_side_score[bot_side][target],
+	#    print "|",
+	#for zone in range(4):
+	#    for target in range(3):
+        #	print self.field_score[zone][target],
+	#    print "|",
+
+        # update which bot is higher score
+        if self.my_score <= self.enemy_score:
+            self.Is_lowwer_score = True
+        else:
+            self.Is_lowwer_score = False
 
     # ここで状態決定　
     def mode_decision(self):
