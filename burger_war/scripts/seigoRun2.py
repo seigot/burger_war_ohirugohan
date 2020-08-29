@@ -314,9 +314,9 @@ class SeigoBot2:
     def recovery(self):
         front, rear = self.detect_collision()
         if front == True:
-            return True, -0.1
+            return True, -0.05
         elif rear == True:
-            return True, 0.1
+            return True, 0.05
         else:
             return False, 0.0
 
