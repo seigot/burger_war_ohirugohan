@@ -37,7 +37,7 @@ class SeigoBot2:
             current_dir=os.getcwd()
             print("current_dir", current_dir)
             path = os.environ['HOME'] + \
-                '/catkin_ws/src/burger_war/enemy_bot_level4/burger_war/scripts/waypoints.csv'
+                '/catkin_ws/src/burger_war/enemy_bot/enemy_bot_level4/burger_war/scripts/waypoints.csv'
             return Waypoints(path)
 
         self.listener = tf.TransformListener()
