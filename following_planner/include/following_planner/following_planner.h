@@ -61,6 +61,7 @@ namespace following_planner
     int status_;
 
     bool initialized_;
+    bool latch_xy_goal_tolerance_;
 
     std::string robot_frame_, map_frame_;
   };
