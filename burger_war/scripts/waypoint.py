@@ -32,19 +32,20 @@ class Waypoints:
             self.Waypoints_Lap = self.Waypoints_Lap+1
             self.number = 0          
 
+        # disable
         # check if better target to get score.
-        self.better_number = self.number
-        for i in range(len(self.points)):
-            # check next target status
-            self.next_target_idx = self.points[self.better_number][3]
-            if self.all_field_score[self.next_target_idx] != 0:
-                print("better target to get score", self.number)
-                self.number = self.better_number
-                break
-
-            self.better_number = self.better_number+1
-            if self.better_number == len(self.points):
-                self.better_number = 0
+        #self.better_number = self.number
+        #for i in range(len(self.points)):
+        #    # check next target status
+        #    self.next_target_idx = self.points[self.better_number][3]
+        #    if self.all_field_score[self.next_target_idx] != 0:
+        #        print("better target to get score", self.number)
+        #        self.number = self.better_number
+        #        break
+        #
+        #    self.better_number = self.better_number+1
+        #    if self.better_number == len(self.points):
+        #        self.better_number = 0
 
         return self.points[self.number][0:3]
 
