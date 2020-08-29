@@ -13,6 +13,7 @@ import numpy as np
 import rospy
 import tf
 import actionlib
+import angles
 
 
 from move_base_msgs.msg import MoveBaseAction, MoveBaseGoal
@@ -63,6 +64,8 @@ class SeigoBot2:
 
         self.direct_twist_pub = rospy.Publisher('cmd_vel', Twist, queue_size=1)
 
+        rospy.Subscriber
+
         self.act_mode = ActMode.BASIC
         self.get_rosparam()
         self.waypoint = load_waypoint()
@@ -85,12 +88,6 @@ class SeigoBot2:
             'camera_range_limit', default=[0.2, 0.5])
         self.camera_angle_limit = rospy.get_param(
             'camera_angle_limit', default=30)*math.pi/180
-
-    def pi2pi(self, rad):
-        mod = rad % 360
-        if mod > 180:
-            return -360+mod
-        return mod
 
     def imageCallback(self, data):
         self.detect_from_camera(data)
@@ -144,7 +141,7 @@ class SeigoBot2:
 
         _, _, yaw = tf.transformations.euler_from_quaternion(rot)
         enemy_direction = math.atan2(dy, dx)
-        enemy_direction_diff = self.pi2pi(enemy_direction-yaw)
+        enemy_direction_diff = angles.normalize_angle(enemy_direction-yaw)
         return True, enemy_distance, enemy_direction_diff
 
     def detect_from_camera(self, data):
@@ -177,7 +174,7 @@ class SeigoBot2:
             front = True
             rospy.logwarn("front collision !!!")
         elif front_count == 0 and rear_count > 0:
-            rear = False
+            rear = True
             rospy.logwarn("rear collision !!!")
         elif front_count > 0 and rear_count > 0:
             front = front_count > rear_count
@@ -248,6 +245,7 @@ class SeigoBot2:
             pass
         elif self.status == actionlib.GoalStatus.SUCCEEDED:
             # 早すぎてマーカー取れなかったらここでsleep
+            rospy.sleep(0.3)
             point = self.waypoint.get_next_waypoint()
             self.send_goal(point)
         elif self.status == actionlib.GoalStatus.ABORTED:
@@ -290,9 +288,11 @@ class SeigoBot2:
     def attack(self):
         self.cancel_goal()
         cmd_vel = self.turn_to_enemy(self.enemy_info[1])
+        print(self.enemy_info[1]*180/math.pi)
         valid, vx = self.recovery()
+        # print(valid, vx)
         if valid == True:
-            cmd_vel.linear.x = 0.0
+            cmd_vel.linear.x = vx
         else:
             if abs(self.enemy_info[1]) < self.attack_angle_th:
                 cmd_vel.linear.x = self.enemy_info[0]-self.approch_distance_th
