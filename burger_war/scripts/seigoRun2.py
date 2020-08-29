@@ -30,9 +30,9 @@ class ActMode(Enum):
     ESCAPE = 3
     DEFENCE = 4
 
-# --- zone definition (r), refer http://localhost:5000/warstate ---
+# --- target definition (r), refer http://localhost:5000/warstate ---
 # the number means index of warstate json file.
-# the target state is stored in bot_side_score,field_score param (0:no one,1:mybot,2:enemy)
+# the target state is stored in all_field_score param (0:no one,1:mybot,2:enemy)
 #
 #      6   [zone3]  8
 #            14
@@ -46,26 +46,7 @@ class ActMode(Enum):
 #   R 2[enemy_bot(b)]L 1   R 5[my_bot(r)]L 4
 #        Front                   Front
 # ----------------------------------------
-target_idx_r = np.array([
-    [ 13, 17, 11], # zone1
-    [ 10, 16,  7], # zone2
-    [  6, 14,  8], # zone3
-    [  9, 15, 12]  # zone4
-])
-target_idx_b = np.array([
-    [  6, 14,  8], # zone1
-    [  9, 15, 12], # zone2
-    [ 13, 17, 11], # zone3
-    [ 10, 16,  7]  # zone4
-])
-bot_side_target_idx_r = np.array([
-    [ 3, 4, 5], # my_bot is red side
-    [ 0, 1, 2], # enemy_bot
-])
-bot_side_target_idx_b = np.array([
-    [ 0, 1, 2], # my_bot is blue side
-    [ 3, 4, 5], # enemt_bot
-])
+
 class SeigoBot2:
 
     def __init__(self):
@@ -102,12 +83,9 @@ class SeigoBot2:
         self.my_score = 0
         self.enemy_score = 0
         self.Is_lowwer_score = False
-        self.bot_side_score = np.array([[1,1,1],[1,1,1]]) # bot_side score state (mybot,enemybot)
-        self.field_score = np.array([[1,1,1],[1,1,1],[1,1,1],[1,1,1]]) # field score state, zone1-4
-	self.field_score_prev = np.array([[1,1,1],[1,1,1],[1,1,1],[1,1,1]]) # field score state (previous)
-        self.enemy_zone = -1
+        self.all_field_score = np.ones([18]) # field score state
 	self.enemy_target = -1
-	self.enemy_stamp = rospy.Time.now()
+	self.enemy_target_get_timestamp = rospy.Time.now()
 
         self.direct_twist_pub = rospy.Publisher('cmd_vel', Twist, queue_size=1)
 
@@ -253,56 +231,17 @@ class SeigoBot2:
             self.my_score = int(dic["scores"]["b"])
             self.enemy_score = int(dic["scores"]["r"])
 
-        # get bot side target state
-	for bot_side in range(2): # 0:mybot,1:enemybot
-	    for target in range(3): # 0:Back,1:L,2:R
-		if self.my_side == "r":
-		    bot_side_target_idx = bot_side_target_idx_r[bot_side][target]
-		else:
-		    bot_side_target_idx = bot_side_target_idx_b[zone][target]
-		target_state = dic["targets"][bot_side_target_idx]["player"]
-
-		if target_state == "n":
-		    self.bot_side_score[bot_side][target] = 1 # no one get this target
-		elif target_state == self.my_side:
-		    self.bot_side_score[bot_side][target] = 0 # my_bot get this target
-		else:
-		    self.bot_side_score[bot_side][target] = 2 # enemy get this target
-
-        # get field target state
-	for zone in range(4):
-	    for target in range(3):
-		if self.my_side == "r":
-		    target_idx = target_idx_r[zone][target]
-		else:
-		    target_idx = target_idx_b[zone][target]
-
-		target_state = dic["targets"][target_idx]["player"]
-
-		self.field_score_prev[zone][target] = self.field_score[zone][target]
-		if target_state == "n":
-		    self.field_score[zone][target] = 1 # no one get this target
-		elif target_state == self.my_side:
-		    self.field_score[zone][target] = 0 # my_bot get this target
-		else:
-		    self.field_score[zone][target] = 2 # enemy get this target
-		    if self.field_score_prev[zone][target] < 2:
-                        # When the enemy get a marker, save enemy state.
-			self.enemy_zone = zone
-			self.enemy_target = target
-			self.enemy_stamp = rospy.Time.now()
-			#print "#",
-
-        # for print debug
-        # [myside] | [enemyside] | [zone1] | [zone2] | [zone3] | [zone4]
-        # for bot_side in range(2):
-	#    for target in range(3):
-	#        print self.bot_side_score[bot_side][target],
-	#    print "|",
-	#for zone in range(4):
-	#    for target in range(3):
-        #	print self.field_score[zone][target],
-	#    print "|",
+        # get warstate score state
+	for idx in range(18): # number of field targets, how to get the number?
+	    target_state = dic["targets"][idx]["player"]
+	    if target_state == "n":
+		self.all_field_score[idx] = 1 # no one get this target
+	    elif target_state == self.my_side:
+		self.all_field_score[idx] = 0 # my_bot get this target
+	    else:
+		self.all_field_score[idx] = 2 # enemy get this target            
+            #print(self.all_field_score)
+        self.waypoint.set_field_score(self.all_field_score)
 
         # update which bot is higher score
         if self.my_score <= self.enemy_score:
