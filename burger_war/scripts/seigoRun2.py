@@ -9,6 +9,7 @@ import math
 import os
 import cv2
 import numpy as np
+import requests
 
 import rospy
 import tf
@@ -29,6 +30,22 @@ class ActMode(Enum):
     ESCAPE = 3
     DEFENCE = 4
 
+# --- target definition (r), refer http://localhost:5000/warstate ---
+# the number means index of warstate json file.
+# the target state is stored in all_field_score param (0:no one,1:mybot,2:enemy)
+#
+#      6   [zone3]  8
+#            14
+#      7            9
+# [zone2] 16    15 [zone4]
+#      10           12
+#            17
+#      11  [zone1]  13
+# ----------------------------------------
+#        Back 0                  Back 3
+#   R 2[enemy_bot(b)]L 1   R 5[my_bot(r)]L 4
+#        Front                   Front
+# ----------------------------------------
 
 class SeigoBot2:
 
@@ -62,6 +79,14 @@ class SeigoBot2:
         self.is_camera_detect = False
         self.camera_detect_angle = -360
 
+        rospy.Timer(rospy.Duration(0.1), self.WarState_timerCallback)
+        self.my_score = 0
+        self.enemy_score = 0
+        self.Is_lowwer_score = False
+        self.all_field_score = np.ones([18]) # field score state
+	self.enemy_target = -1
+	self.enemy_target_get_timestamp = rospy.Time.now()
+
         self.direct_twist_pub = rospy.Publisher('cmd_vel', Twist, queue_size=1)
 
         rospy.Subscriber
@@ -72,7 +97,7 @@ class SeigoBot2:
         self.send_goal(self.waypoint.get_current_waypoint())
 
     def get_rosparam(self):
-        self.side = rospy.get_param('~side')
+        self.my_side = rospy.get_param('~side')
         self.robot_namespace = rospy.get_param('~robot_namespace')
         self.enemy_time_tolerance = rospy.get_param(
             'detect_enemy_time_tolerance', default=0.5)
@@ -88,6 +113,7 @@ class SeigoBot2:
             'camera_range_limit', default=[0.2, 0.5])
         self.camera_angle_limit = rospy.get_param(
             'camera_angle_limit', default=30)*math.pi/180
+        self.JUDGE_URL = rospy.get_param('/send_id_to_judge/judge_url')
 
     def imageCallback(self, data):
         self.detect_from_camera(data)
@@ -188,6 +214,40 @@ class SeigoBot2:
         #     rospy.logwarn('rear collision !!')
         #     rear = True
         return front, rear
+
+    # RESPECT @F0CACC1A
+    def WarState_timerCallback(self, state):
+        self.getWarState()
+
+    def getWarState(self):
+        # get current state from judge server
+	resp = requests.get(self.JUDGE_URL + "/warState")
+	dic = resp.json()
+        # get score
+        if self.my_side == "r": # red_bot
+            self.my_score = int(dic["scores"]["r"])
+            self.enemy_score = int(dic["scores"]["b"])
+        else: # blue_bot
+            self.my_score = int(dic["scores"]["b"])
+            self.enemy_score = int(dic["scores"]["r"])
+
+        # get warstate score state
+	for idx in range(18): # number of field targets, how to get the number?
+	    target_state = dic["targets"][idx]["player"]
+	    if target_state == "n":
+		self.all_field_score[idx] = 1 # no one get this target
+	    elif target_state == self.my_side:
+		self.all_field_score[idx] = 0 # my_bot get this target
+	    else:
+		self.all_field_score[idx] = 2 # enemy get this target            
+            #print(self.all_field_score)
+        self.waypoint.set_field_score(self.all_field_score)
+
+        # update which bot is higher score
+        if self.my_score <= self.enemy_score:
+            self.Is_lowwer_score = True
+        else:
+            self.Is_lowwer_score = False
 
     # ここで状態決定　
     def mode_decision(self):

@@ -2,6 +2,7 @@ sudo apt install python-catkin-tools # for catkin build
 sudo apt-get install ros-kinetic-dwa-local-planner
 sudo apt-get install ros-kinetic-global-planner
 sudo apt install -y libarmadillo-dev libarmadillo6  # necessary to install obstacle_detector
+sudo pip install requests
 git clone https://github.com/tysik/obstacle_detector.git
 
 # (例)obstacle_detectorインストール手順

@@ -10,6 +10,7 @@ import os
 import cv2
 import numpy as np
 
+import rospkg
 import rospy
 import tf
 import actionlib
@@ -36,8 +37,11 @@ class SeigoBot2:
         def load_waypoint():
             current_dir=os.getcwd()
             print("current_dir", current_dir)
-            path = os.environ['HOME'] + \
-                '/catkin_ws/src/burger_war/enemy_bot_level4/burger_war/scripts/waypoints.csv'
+            rospack=rospkg.RosPack()
+            self.WAYPOINT_CSV_FPATH=os.path.join(rospack.get_path("burger_war_level4"),"scripts","waypoints.csv")
+            path = self.WAYPOINT_CSV_FPATH
+            #path = os.environ['HOME'] + \
+            #    '/catkin_ws/src/burger_war/enemy_bot/enemy_bot_level4/burger_war/scripts/waypoints.csv'
             return Waypoints(path)
 
         self.listener = tf.TransformListener()
