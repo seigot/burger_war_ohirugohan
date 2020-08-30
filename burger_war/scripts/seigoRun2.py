@@ -23,6 +23,8 @@ from geometry_msgs.msg import Twist
 from sensor_msgs.msg import LaserScan, Image
 from cv_bridge import CvBridge, CvBridgeError
 
+from std_srvs.srv import Empty, EmptyRequest, EmptyResponse
+
 
 class ActMode(Enum):
     BASIC = 1
@@ -47,6 +49,7 @@ class ActMode(Enum):
 #        Front                   Front
 # ----------------------------------------
 
+
 class SeigoBot2:
 
     def __init__(self):
@@ -54,7 +57,7 @@ class SeigoBot2:
         def load_waypoint():
             path = os.environ['HOME'] + \
                 '/catkin_ws/src/burger_war/burger_war/scripts/waypoints.csv'
-            return Waypoints(path)
+            return Waypoints(path, self.my_side)
 
         self.listener = tf.TransformListener()
 
@@ -74,7 +77,7 @@ class SeigoBot2:
         rospy.Subscriber('scan', LaserScan, self.lidar_callback)
         self.scan = LaserScan()
 
-        rospy.Subscriber('image_raw', Image, self.imageCallback)
+        # rospy.Subscriber('image_raw', Image, self.imageCallback)
         self.camera_detector = EnemyCameraDetector()
         self.is_camera_detect = False
         self.camera_detect_angle = -360
@@ -83,13 +86,15 @@ class SeigoBot2:
         self.my_score = 0
         self.enemy_score = 0
         self.Is_lowwer_score = False
-        self.all_field_score = np.ones([18]) # field score state
-	self.enemy_target = -1
-	self.enemy_target_get_timestamp = rospy.Time.now()
+        self.all_field_score = np.ones([18])  # field score state
+        self.enemy_target = -1
+        self.enemy_target_get_timestamp = rospy.Time.now()
+        self.enemy_body_remain = 0
 
         self.direct_twist_pub = rospy.Publisher('cmd_vel', Twist, queue_size=1)
 
-        rospy.Subscriber
+        rospy.wait_for_service("/move_base/clear_costmaps")
+        self.clear_costmap = rospy.ServiceProxy("/move_base/clear_costmaps", Empty)
 
         self.act_mode = ActMode.BASIC
         self.get_rosparam()
@@ -221,27 +226,34 @@ class SeigoBot2:
 
     def getWarState(self):
         # get current state from judge server
-	resp = requests.get(self.JUDGE_URL + "/warState")
-	dic = resp.json()
+        resp = requests.get(self.JUDGE_URL + "/warState")
+        dic = resp.json()
         # get score
-        if self.my_side == "r": # red_bot
+        if self.my_side == "r":  # red_bot
             self.my_score = int(dic["scores"]["r"])
             self.enemy_score = int(dic["scores"]["b"])
-        else: # blue_bot
+        else:  # blue_bot
             self.my_score = int(dic["scores"]["b"])
             self.enemy_score = int(dic["scores"]["r"])
 
         # get warstate score state
-	for idx in range(18): # number of field targets, how to get the number?
-	    target_state = dic["targets"][idx]["player"]
-	    if target_state == "n":
-		self.all_field_score[idx] = 1 # no one get this target
-	    elif target_state == self.my_side:
-		self.all_field_score[idx] = 0 # my_bot get this target
-	    else:
-		self.all_field_score[idx] = 2 # enemy get this target            
-            #print(self.all_field_score)
-        self.waypoint.set_field_score(self.all_field_score)
+        for idx in range(18):  # number of field targets, how to get the number?
+            target_state = dic["targets"][idx]["player"]
+            if target_state == "n":
+                self.all_field_score[idx] = 1  # no one get this target
+            elif target_state == self.my_side:
+                self.all_field_score[idx] = 0  # my_bot get this target
+            else:
+                self.all_field_score[idx] = 2  # enemy get this target
+            # print(target_state)
+        self.waypoint.set_field_score(self.all_field_score[6:])
+        
+        # update body AR marker point
+        if self.my_side == "b":
+            self.enemy_body_remain = np.sum(self.all_field_score[3:6])
+        elif self.my_side == "r":
+            self.enemy_body_remain = np.sum(self.all_field_score[0:3]) 
+        
 
         # update which bot is higher score
         if self.my_score <= self.enemy_score:
@@ -255,10 +267,13 @@ class SeigoBot2:
         if exist == False:  # いなかったら巡回
             return ActMode.BASIC
         else:
+            # print self.enemy_body_remain, self.all_field_score[0:6]
+            self.enemy_info = [distance, direction_diff]
+            if self.enemy_body_remain <= 1 and distance < 1.0:
+                return ActMode.DEFENCE
             if distance < self.snipe_th:  # 発見して近かったら攻撃
-                self.enemy_info = [distance, direction_diff]
                 return ActMode.ATTACK
-            rospy.loginfo('detect enemy but so far')
+            # rospy.loginfo('detect enemy but so far')
             return ActMode.BASIC
 
     def status_transition(self):
@@ -280,6 +295,8 @@ class SeigoBot2:
             self.basic()
         elif self.act_mode == ActMode.ATTACK:
             self.attack()
+        elif self.act_mode == ActMode.DEFENCE:
+            self.defence()
         else:
             rospy.logwarn('unknown actmode !!!')
 
@@ -321,6 +338,7 @@ class SeigoBot2:
             return
 
     def send_goal(self, point):
+        print self.clear_costmap.call()
         goal = MoveBaseGoal()
         goal.target_pose.header.frame_id = self.robot_namespace+"/map"
         goal.target_pose.pose.position.x = point[0]
@@ -348,7 +366,7 @@ class SeigoBot2:
     def attack(self):
         self.cancel_goal()
         cmd_vel = self.turn_to_enemy(self.enemy_info[1])
-        print(self.enemy_info[1]*180/math.pi)
+        # print(self.enemy_info[1]*180/math.pi)
         valid, vx = self.recovery()
         # print(valid, vx)
         if valid == True:
@@ -364,11 +382,19 @@ class SeigoBot2:
         return
 
     def defence(self):
-        return
+        self.cancel_goal()
+        cmd_vel = self.turn_to_enemy(self.enemy_info[1])
+        print self.enemy_info
+        valid, vx = self.recovery()
+        if valid == True:
+            cmd_vel.linear.x = vx
+        else:
+            cmd_vel.linear.x = 0.0
+        self.direct_twist_pub.publish(cmd_vel)
 
     def turn_to_enemy(self, direction_diff):
         cmd_vel = Twist()
-        cmd_vel.angular.z = direction_diff
+        cmd_vel.angular.z = direction_diff*2.0
         return cmd_vel
 
     def recovery(self):
