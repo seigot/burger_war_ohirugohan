@@ -89,7 +89,7 @@ class SeigoBot2:
         self.all_field_score = np.ones([18])  # field score state
         self.enemy_target = -1
         self.enemy_target_get_timestamp = rospy.Time.now()
-        self.enemy_body_remain = 0
+        self.enemy_body_remain = 3
 
         self.direct_twist_pub = rospy.Publisher('cmd_vel', Twist, queue_size=1)
 
