@@ -83,12 +83,14 @@ class SeigoBot2:
         self.camera_detect_angle = -360
 
         rospy.Timer(rospy.Duration(0.1), self.WarState_timerCallback)
+        self.game_timestamp = 0
         self.my_score = 0
         self.enemy_score = 0
         self.Is_lowwer_score = False
         self.all_field_score = np.ones([18])  # field score state
-        self.enemy_target = -1
-        self.enemy_target_get_timestamp = rospy.Time.now()
+        self.all_field_score_prev = np.ones([18])  # field score state (previous)
+        self.enemy_get_target_no = -1
+        self.enemy_get_target_no_timestamp = -1
         self.enemy_body_remain = 3
 
         self.direct_twist_pub = rospy.Publisher('cmd_vel', Twist, queue_size=1)
@@ -121,7 +123,9 @@ class SeigoBot2:
         self.JUDGE_URL = rospy.get_param('/send_id_to_judge/judge_url')
 
     def imageCallback(self, data):
+        #print("imageCallback+", rospy.Time.now())
         self.detect_from_camera(data)
+        #print("imageCallback-", rospy.Time.now())
 
     def get_position_from_tf(self, c1, c2):
         trans = []
@@ -236,8 +240,11 @@ class SeigoBot2:
             self.my_score = int(dic["scores"]["b"])
             self.enemy_score = int(dic["scores"]["r"])
 
-        # get warstate score state
+        self.game_timestamp = int(dic["time"])
+        
+        # get warstate score state and compare previous value
         for idx in range(18):  # number of field targets, how to get the number?
+            self.all_field_score_prev[idx] = self.all_field_score[idx]
             target_state = dic["targets"][idx]["player"]
             if target_state == "n":
                 self.all_field_score[idx] = 1  # no one get this target
@@ -245,7 +252,15 @@ class SeigoBot2:
                 self.all_field_score[idx] = 0  # my_bot get this target
             else:
                 self.all_field_score[idx] = 2  # enemy get this target
-            # print(target_state)
+
+            # check if field score is updated.
+            if self.all_field_score[idx] != self.all_field_score_prev[idx]:
+                if self.all_field_score[idx] == 2:
+                    print("enemy get target No.", idx, self.game_timestamp)
+                    self.enemy_get_target_no = idx
+                    self.enemy_get_target_no_timestamp = self.game_timestamp
+        # update field score state to check enemy get target
+
         self.waypoint.set_field_score(self.all_field_score[6:])
         
         # update body AR marker point
