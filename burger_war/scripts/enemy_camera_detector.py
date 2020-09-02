@@ -48,7 +48,7 @@ DISTANCE_TO_RED_COLOR_THRESHOLD = 1.00
 ELAPSED_TIME_TO_ATTACK_ENEMY = 90 # (s)
 F_IS_LOWWER_SCORE_THRESHOLD = 2
 
-
+GREEN_AREA_DETECT_TH=40 # area pixel(w)*pixel(h) size
 
 # enemy red circle distance table
 enemyTable = [0.6,
@@ -288,7 +288,7 @@ class EnemyCameraDetector:
         rects = []
         for contour in contours:
             approx = cv2.convexHull(contour)
-            rect = cv2.boundingRect(approx)
+            rect = cv2.boundingRect(approx) # output x,y,w,h
             rects.append(np.array(rect))
         return rects
 
@@ -327,18 +327,19 @@ class EnemyCameraDetector:
         else:
             self.red_angle = COLOR_TARGET_ANGLE_INIT_VAL
 
-        # green
+        # detect green target
         rects = self.find_rect_of_target_color(frame, GREEN)
         if len(rects) > 0:
+            # get largest area
             rect = max(rects, key=(lambda x: x[2] * x[3]))
             if rect[3] > 1:
-                cv2.rectangle(frame, tuple(rect[0:2]), tuple(rect[0:2] + rect[2:4]), (0, 255, 0), thickness=2)
-                # angle(rad)
-                tmp_angle = ((rect[0]+rect[0]+rect[2])/2-(img_w/(2*image_resize_scale)))*image_resize_scale *0.077
-                self.green_angle = tmp_angle * np.pi / 180
-                # print ("green_angle", tmp_angle, self.green_angle )
-                # print ( tmp_angle )
-                if  redFound is False:
+                # check rectangle size to remove noise area
+                if rect[2]*rect[3] > GREEN_AREA_DETECT_TH:
+                    cv2.rectangle(frame, tuple(rect[0:2]), tuple(rect[0:2] + rect[2:4]), (0, 255, 0), thickness=2)
+                    # angle(rad)
+                    tmp_angle = ((rect[0]+rect[0]+rect[2])/2-(img_w/(2*image_resize_scale)))*image_resize_scale *0.077
+                    self.green_angle = tmp_angle * np.pi / 180
+                    print ("area", rect[2]*rect[3], "green_angle", tmp_angle, self.green_angle )
                     greenFound = True
                     self.trackEnemy(rect)
         else:
