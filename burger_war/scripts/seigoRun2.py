@@ -112,8 +112,8 @@ class SeigoBot2:
         self.distance_to_wall_th = rospy.get_param(
             'distance_to_wall_th', default=0.15)
         self.counter_th = rospy.get_param('enemy_count_th', default=3)
-        self.approch_distance_th = rospy.get_param(
-            'approch_distance_th', default=0.5)
+        self.approach_distance_th = rospy.get_param(
+            '~approach_distance_th', default=0.5)
         self.attack_angle_th = rospy.get_param(
             'attack_angle_th', default=45*math.pi/180)
         self.camera_range_limit = rospy.get_param(
@@ -388,7 +388,7 @@ class SeigoBot2:
             cmd_vel.linear.x = vx
         else:
             if abs(self.enemy_info[1]) < self.attack_angle_th:
-                cmd_vel.linear.x = self.enemy_info[0]-self.approch_distance_th
+                cmd_vel.linear.x = self.enemy_info[0]-self.approach_distance_th
             else:
                 cmd_vel.linear.x = 0.0
         self.direct_twist_pub.publish(cmd_vel)

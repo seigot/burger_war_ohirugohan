@@ -36,7 +36,7 @@
     <param name="distance_to_wall_th" value="0.15" />
 
     <!-- 攻撃するとき敵まで何メートル近づくか -->
-    <param name="approch_distance_th" value="0.2" />
+    <param name="approach_distance_th" value="0.5" />
 
     <!-- 敵と方位角の角度差分がこのしきい値を下回ってから、接近 -->
     <param name="attack_angle_th" value="0.785" />
