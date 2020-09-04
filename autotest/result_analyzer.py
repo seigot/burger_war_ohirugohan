@@ -42,20 +42,26 @@ class fight_result:
         else:
             self.result_onekilllose.append(0)
 
+    def div(self, a, b):
+        if b == 0:
+            return 0
+        else:
+            return a / b
+
     def my_average(self):
-        return sum(self.my_score)/len(self.my_score)
+        return self.div(sum(self.my_score), len(self.my_score))
 
     def enemy_average(self):
-        return sum(self.enemy_score)/len(self.enemy_score)
+        return self.div(sum(self.enemy_score), len(self.enemy_score))
 
     def winning_rate(self):
-        return float(sum(self.result))/float(len(self.result))
+        return self.div(float(sum(self.result)), float(len(self.result)))
 
     def onekillwin_rate(self):
-        return float(sum(self.result_onekillwin))/float(len(self.result_onekillwin))
+        return self.div(float(sum(self.result_onekillwin)), float(len(self.result_onekillwin)))
 
     def onekilllose_rate(self):
-        return float(sum(self.result_onekilllose))/float(len(self.result_onekilllose))
+        return self.div(float(sum(self.result_onekilllose)), float(len(self.result_onekilllose)))
     
     def transition(self, num):
         winning_rate_transition = []
