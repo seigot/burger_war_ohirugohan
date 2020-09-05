@@ -82,7 +82,6 @@ class SeigoBot2:
         self.is_camera_detect = False
         self.camera_detect_angle = -360
 
-        rospy.Timer(rospy.Duration(0.1), self.WarState_timerCallback)
         self.game_timestamp = 0
         self.my_score = 0
         self.enemy_score = 0
@@ -102,6 +101,8 @@ class SeigoBot2:
         self.get_rosparam()
         self.waypoint = load_waypoint()
         self.send_goal(self.waypoint.get_current_waypoint())
+        # warstate callback should be called after all parameter is ready!!
+        rospy.Timer(rospy.Duration(0.1), self.WarState_timerCallback)
 
     def get_rosparam(self):
         self.my_side = rospy.get_param('~side')
@@ -120,7 +121,6 @@ class SeigoBot2:
             'camera_range_limit', default=[0.2, 0.5])
         self.camera_angle_limit = rospy.get_param(
             'camera_angle_limit', default=30)*math.pi/180
-        self.JUDGE_URL = rospy.get_param('/send_id_to_judge/judge_url')
 
     def imageCallback(self, data):
         #print("imageCallback+", rospy.Time.now())
@@ -230,7 +230,7 @@ class SeigoBot2:
 
     def getWarState(self):
         # get current state from judge server
-        resp = requests.get(self.JUDGE_URL + "/warState")
+        resp = requests.get(JUDGE_URL + "/warState")
         dic = resp.json()
         # get score
         if self.my_side == "r":  # red_bot
@@ -275,6 +275,7 @@ class SeigoBot2:
             self.Is_lowwer_score = True
         else:
             self.Is_lowwer_score = False
+        #print("Is_lowwer_score", self.Is_lowwer_score)
 
     # ここで状態決定　
     def mode_decision(self):
@@ -432,4 +433,5 @@ def main():
 
 
 if __name__ == "__main__":
+    JUDGE_URL = rospy.get_param('/send_id_to_judge/judge_url')
     main()
