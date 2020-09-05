@@ -125,9 +125,9 @@ class SeigoBot2:
         self.enable_escape_approach = rospy.get_param(
             '~enable_escape_approach', default="False")
         self.escape_approach_distance_th_min = rospy.get_param(
-            '~escape_approach_distance_th_min', default=0.5)
+            '~escape_approach_distance_th_min', default=0.23)
         self.escape_approach_distance_th_max = rospy.get_param(
-            '~escape_approach_distance_th_max', default=0.5)
+            '~escape_approach_distance_th_max', default=0.85)
         self.escape_approach_time_interval = rospy.get_param(
             '~escape_approach_time_interval', default=6)
         print("enable_escape_approach", self.enable_escape_approach)
