@@ -130,7 +130,6 @@ class SeigoBot2:
             '~escape_approach_distance_th_max', default=0.85)
         self.escape_approach_time_interval = rospy.get_param(
             '~escape_approach_time_interval', default=6)
-        print("enable_escape_approach", self.enable_escape_approach)
 
     def imageCallback(self, data):
         #print("imageCallback+", rospy.Time.now())
@@ -424,7 +423,6 @@ class SeigoBot2:
             local_approach_distance_th = self.approach_distance_th
         else: # third interval
             local_approach_distance_th = self.escape_approach_distance_th_max
-        print("time_diff", time_diff, local_approach_distance_th)
 
         # same with attack mode --->
         self.cancel_goal()
