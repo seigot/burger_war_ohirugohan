@@ -99,6 +99,7 @@ class SeigoBot2:
 
         self.act_mode = ActMode.BASIC
         self.get_rosparam()
+        self.escape_mode_start_time = -1
         self.waypoint = load_waypoint()
         self.send_goal(self.waypoint.get_current_waypoint())
         # warstate callback should be called after all parameter is ready!!
@@ -121,6 +122,15 @@ class SeigoBot2:
             'camera_range_limit', default=[0.2, 0.5])
         self.camera_angle_limit = rospy.get_param(
             'camera_angle_limit', default=30)*math.pi/180
+        self.enable_escape_approach = rospy.get_param(
+            '~enable_escape_approach', default="False")
+        self.escape_approach_distance_th_min = rospy.get_param(
+            '~escape_approach_distance_th_min', default=0.5)
+        self.escape_approach_distance_th_max = rospy.get_param(
+            '~escape_approach_distance_th_max', default=0.5)
+        self.escape_approach_time_interval = rospy.get_param(
+            '~escape_approach_time_interval', default=6)
+        print("enable_escape_approach", self.enable_escape_approach)
 
     def imageCallback(self, data):
         #print("imageCallback+", rospy.Time.now())
@@ -287,6 +297,9 @@ class SeigoBot2:
             self.enemy_info = [distance, direction_diff]
             if self.enemy_body_remain <= 1 and distance < 1.0:
                 return ActMode.DEFENCE
+            if distance < self.snipe_th and self.enable_escape_approach == True and self.Is_lowwer_score == True:
+                # if low score, once attack then try to escape.
+                return ActMode.ESCAPE
             if distance < self.snipe_th:  # 発見して近かったら攻撃
                 return ActMode.ATTACK
             # rospy.loginfo('detect enemy but so far')
@@ -313,6 +326,10 @@ class SeigoBot2:
             self.attack()
         elif self.act_mode == ActMode.DEFENCE:
             self.defence()
+        elif self.act_mode == ActMode.ESCAPE:
+            if pre_act_mode != self.act_mode:
+                self.escape_mode_start_time = rospy.Time.now().to_sec()
+            self.escape()
         else:
             rospy.logwarn('unknown actmode !!!')
 
@@ -395,6 +412,34 @@ class SeigoBot2:
         self.direct_twist_pub.publish(cmd_vel)
 
     def escape(self):
+        # if low score, once attack then try to escape.
+        # change approach_distance_th by time_interval
+        time_interval = self.escape_approach_time_interval
+        number_of_time_interval = 3
+        time_diff = rospy.Time.now().to_sec() - self.escape_mode_start_time
+        time_diff = time_diff % (self.escape_approach_time_interval * number_of_time_interval)
+        if time_diff < time_interval: # first interval
+            local_approach_distance_th = self.escape_approach_distance_th_min
+        elif time_diff < time_interval*2: # second interval
+            local_approach_distance_th = self.approach_distance_th
+        else: # third interval
+            local_approach_distance_th = self.escape_approach_distance_th_max
+        print("time_diff", time_diff, local_approach_distance_th)
+
+        # same with attack mode --->
+        self.cancel_goal()
+        cmd_vel = self.turn_to_enemy(self.enemy_info[1])
+        # print(self.enemy_info[1]*180/math.pi)
+        valid, vx = self.recovery()
+        # print(valid, vx)
+        if valid == True:
+            cmd_vel.linear.x = vx
+        else:
+            if abs(self.enemy_info[1]) < self.attack_angle_th:
+                cmd_vel.linear.x = self.enemy_info[0]-local_approach_distance_th
+            else:
+                cmd_vel.linear.x = 0.0
+        self.direct_twist_pub.publish(cmd_vel)
         return
 
     def defence(self):

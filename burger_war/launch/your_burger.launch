@@ -40,6 +40,16 @@
 
     <!-- 敵と方位角の角度差分がこのしきい値を下回ってから、接近 -->
     <param name="attack_angle_th" value="0.785" />
+
+    <!-- escape parameter -->
+    <!-- enable escape flag -->
+    <param name="enable_escape_approach" value="False" />
+     <!-- minimum distance to enemy(m) -->
+    <param name="escape_approach_distance_th_min" value="0.5" />
+    <!-- maxmum distance to enemy(m) -->
+    <param name="escape_approach_distance_th_max" value="0.5" />
+    <!-- interval time to min-max distance (sec) -->
+    <param name="escape_approach_time_interval" value="6" />
   </node>
 
   <include file="$(find burger_war)/launch/obstacle_detector.launch">
