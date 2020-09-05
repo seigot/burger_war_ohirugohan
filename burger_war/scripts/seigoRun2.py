@@ -294,7 +294,7 @@ class SeigoBot2:
         else:
             # print self.enemy_body_remain, self.all_field_score[0:6]
             self.enemy_info = [distance, direction_diff]
-            if self.enemy_body_remain <= 1 and distance < 1.0:
+            if self.enemy_body_remain <= 1 and distance < 1.0 and self.Is_lowwer_score == False:
                 return ActMode.DEFENCE
             if distance < self.snipe_th and self.enable_escape_approach == True and self.Is_lowwer_score == True:
                 # if low score, once attack then try to escape.
