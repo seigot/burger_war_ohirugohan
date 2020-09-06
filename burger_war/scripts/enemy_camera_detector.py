@@ -25,6 +25,7 @@ otherBoxDistance = 53
 RED   = 1
 GREEN = 2
 BLUE  = 3
+BLACK = 4
 
 # target angle init value
 COLOR_TARGET_ANGLE_INIT_VAL = -360
@@ -49,6 +50,8 @@ ELAPSED_TIME_TO_ATTACK_ENEMY = 90 # (s)
 F_IS_LOWWER_SCORE_THRESHOLD = 2
 
 GREEN_AREA_DETECT_TH=40 # area pixel(w)*pixel(h) size
+BLACK_AREA_DETECT_TH=40 # area pixel(w)*pixel(h) size
+BLACK_WH_RATIO_DETECT_TH=2 # width,height,ratio
 
 # enemy red circle distance table
 enemyTable = [0.6,
@@ -268,6 +271,12 @@ class EnemyCameraDetector:
             upper_green = np.array([110, 255, 255])
             mask = cv2.inRange(hsv, lower_green, upper_green)
 
+        # green detection
+        if color_type == BLACK:
+            lower_green = np.array([0, 0, 0])
+            upper_green = np.array([50, 50, 100])
+            mask = cv2.inRange(hsv, lower_green, upper_green)
+
         # neiborhood for dilate/erode
         neiborhood = np.array([[0, 1, 0],
                                [1, 1, 1],
@@ -370,6 +379,15 @@ class EnemyCameraDetector:
         #         print("ignore enemy...", self.getElapsedTime() )
         #         self.red_distance = DISTANCE_TO_ENEMY_INIT_VAL
 
+        # black detection sample
+        rects = self.find_rect_of_target_color(frame, BLACK)
+        if len(rects) > 0:
+            rect = max(rects, key=(lambda x: x[2] * x[3]))
+            if rect[3] > 2:
+                # check rectangle size to remove noise area
+                if rect[2]*rect[3] > BLACK_AREA_DETECT_TH:
+                    if rect[2]/rect[3] <  BLACK_WH_RATIO_DETECT_TH: # (w/h)
+                        cv2.rectangle(frame, tuple(rect[0:2]), tuple(rect[0:2] + rect[2:4]), (0, 0, 0), thickness=2)
         if self.ImgDebug == True:
             cv2.imshow('image',frame)
             cv2.waitKey(1)
