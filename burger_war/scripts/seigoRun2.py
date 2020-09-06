@@ -87,7 +87,8 @@ class SeigoBot2:
         self.enemy_score = 0
         self.Is_lowwer_score = False
         self.all_field_score = np.ones([18])  # field score state
-        self.all_field_score_prev = np.ones([18])  # field score state (previous)
+        self.all_field_score_prev = np.ones(
+            [18])  # field score state (previous)
         self.enemy_get_target_no = -1
         self.enemy_get_target_no_timestamp = -1
         self.enemy_body_remain = 3
@@ -95,7 +96,8 @@ class SeigoBot2:
         self.direct_twist_pub = rospy.Publisher('cmd_vel', Twist, queue_size=1)
 
         rospy.wait_for_service("/move_base/clear_costmaps")
-        self.clear_costmap = rospy.ServiceProxy("/move_base/clear_costmaps", Empty)
+        self.clear_costmap = rospy.ServiceProxy(
+            "/move_base/clear_costmaps", Empty)
 
         self.act_mode = ActMode.BASIC
         self.get_rosparam()
@@ -241,7 +243,7 @@ class SeigoBot2:
             self.enemy_score = int(dic["scores"]["r"])
 
         self.game_timestamp = int(dic["time"])
-        
+
         # get warstate score state and compare previous value
         for idx in range(18):  # number of field targets, how to get the number?
             self.all_field_score_prev[idx] = self.all_field_score[idx]
@@ -262,13 +264,12 @@ class SeigoBot2:
         # update field score state to check enemy get target
 
         self.waypoint.set_field_score(self.all_field_score[6:])
-        
+
         # update body AR marker point
         if self.my_side == "b":
             self.enemy_body_remain = np.sum(self.all_field_score[3:6])
         elif self.my_side == "r":
-            self.enemy_body_remain = np.sum(self.all_field_score[0:3]) 
-        
+            self.enemy_body_remain = np.sum(self.all_field_score[0:3])
 
         # update which bot is higher score
         if self.my_score <= self.enemy_score:
@@ -410,7 +411,10 @@ class SeigoBot2:
 
     def turn_to_enemy(self, direction_diff):
         cmd_vel = Twist()
-        cmd_vel.angular.z = direction_diff*2.0
+        if direction_diff > 60.0/180*math.pi:
+            cmd_vel.angular.z = math.copysign(1.0, direction_diff) * 2.75
+        else:
+            cmd_vel.angular.z = direction_diff*2.0
         return cmd_vel
 
     def recovery(self):
