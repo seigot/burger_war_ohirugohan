@@ -419,9 +419,9 @@ class SeigoBot2:
         time_diff = rospy.Time.now().to_sec() - self.escape_mode_start_time
         time_diff = time_diff % (self.escape_approach_time_interval * number_of_time_interval)
         if time_diff < time_interval: # first interval
-            local_approach_distance_th = self.escape_approach_distance_th_min
-        elif time_diff < time_interval*2: # second interval
             local_approach_distance_th = self.approach_distance_th
+        elif time_diff < time_interval*2: # second interval
+            local_approach_distance_th = self.escape_approach_distance_th_min
         else: # third interval
             local_approach_distance_th = self.escape_approach_distance_th_max
 
