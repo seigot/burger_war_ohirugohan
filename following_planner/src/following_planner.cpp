@@ -55,7 +55,7 @@ namespace following_planner
 		nh_.param<double>("vw_", vw_, 1.57);
 		nh_.param<double>("slow_range", slow_range_, 0.1);
 		nh_.param<double>("rotate_angle_th", rotate_angle_th_, 30);
-		nh_.param<bool>("latch_xy_goal_tolerance", latch_xy_goal_tolerance_, false);
+		nh_.param<bool>("latch_xy_goal_tolerance", latch_xy_goal_tolerance_, true);
 	}
 
 	FollowingPlannerROS::~FollowingPlannerROS()
@@ -80,7 +80,7 @@ namespace following_planner
 		bool xy_reached;
 		if(latch_xy_goal_tolerance_ && status_ == GoalStatus::ROTATING)
 		{
-			xy_goal_tolerance_ = true;
+			xy_reached = true;
 		}
 		else
 		{
