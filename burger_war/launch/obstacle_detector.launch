@@ -12,7 +12,7 @@
     <param name="max_split_distance" value="0.1"/>
     <param name="max_merge_separation" value="0.2"/>
     <param name="max_merge_spread" value="0.01"/>
-    <param name="max_circle_radius" value="0.15"/>
+    <param name="max_circle_radius" value="0.20"/>
     <param name="radius_enlargement" value="0.0"/>
 
     <param name="frame_id" value="$(arg robot_namespace)/map"/>
