@@ -108,19 +108,19 @@ class SeigoBot2:
         self.my_side = rospy.get_param('~side')
         self.robot_namespace = rospy.get_param('~robot_namespace')
         self.enemy_time_tolerance = rospy.get_param(
-            'detect_enemy_time_tolerance', default=0.5)
-        self.snipe_th = rospy.get_param('snipe_distance_th', default=0.8)
+            '~detect_enemy_time_tolerance', default=0.5)
+        self.snipe_th = rospy.get_param('~snipe_distance_th', default=0.8)
         self.distance_to_wall_th = rospy.get_param(
-            'distance_to_wall_th', default=0.15)
+            '~distance_to_wall_th', default=0.15)
         self.counter_th = rospy.get_param('enemy_count_th', default=3)
         self.approach_distance_th = rospy.get_param(
             '~approach_distance_th', default=0.5)
         self.attack_angle_th = rospy.get_param(
-            'attack_angle_th', default=45*math.pi/180)
+            '~attack_angle_th', default=45*math.pi/180)
         self.camera_range_limit = rospy.get_param(
-            'camera_range_limit', default=[0.2, 0.5])
+            '~camera_range_limit', default=[0.2, 0.5])
         self.camera_angle_limit = rospy.get_param(
-            'camera_angle_limit', default=30)*math.pi/180
+            '~camera_angle_limit', default=30)*math.pi/180
 
     def imageCallback(self, data):
         #print("imageCallback+", rospy.Time.now())
